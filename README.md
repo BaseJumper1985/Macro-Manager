@@ -1,12 +1,12 @@
 # Macro-Manager
 A program in AutoHotKey for the creation and management of dynamic macros and hot strings
 
-
+###Description###
 This is the first prototype of the macro program. It works, but there are still some bugs to work out. It does not have an interface yet as this is just a proof of concept.
 Right now the only configuration is done through the ini file. The label ( line in [square brackets] ) can be anything, but later it will cause different behaviors based on which label a macro is under. I want to eventually have an interface that will handle the editing of this file and will check for duplicates and valid strings as well as some kind of provision for multi-line/paragraph macros.
 I have provided a shortcut in the tray menu to open the ini file for easy editing. The program will automatically reload upon saving and closing the editing window so that changes will take effect right away.
 
-Known issues:
+###Known Issues###
 - Only non-letters or numbers will cause the program to stop monitoring input for a string
   (eg. !, %, ., Space, Enter, etc).
 - Punctuation is preserved and placed at the end of the resultant string, but spaces will not be kept.
@@ -16,9 +16,9 @@ Known issues:
 
 Let me know what you think and please tell me of any ideas or features you would like.
 
-Installation:
+###Installation###
 1. Make sure the “macros.ini” file is in the same folder as “Shop Macros.exe”. The program will be looking in this folder for the “macros.ini” file.
-Configuration:
+###Configuration###
 1. To create a new macro:
     1. Run “Shop Macros.exe” then right-click the tray icon that appears.
     1. In the menu you will find “Open INI file for editing”. Clicking this will open “macros.ini” Notepad for editing.
