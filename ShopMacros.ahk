@@ -5,7 +5,7 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
-; SetTimer, CheckIdle, 5000
+SetTimer, CheckIdle, 5000
 
 Menu, Tray, Add,% "Open INI File for Editing", OpenIni
 Menu, Tray, Add,% "Reload This Program", ManReload
@@ -23,14 +23,7 @@ Loop
 	Punct := ""
 	Loop
 	{
-		TimedOut:
-		Input, Letter, V L1 T2, {Left}{Right}{Up}{Down}{BackSpace}^c^x^a
-		if (ErrorLevel = "TimeOut")
-		{
-			Suspend, On
-			Suspend, Off
-			Goto, TimedOut
-		}
+		Input, Letter, V L1, {Left}{Right}{Up}{Down}{BackSpace}^c^x^a
 		if Letter is not alpha
 		{
 			if Letter is not digit
@@ -59,7 +52,7 @@ Loop
 		IniRead, Phrase, % IniFile, % SectionList[A_Index], % Matcher
 		if (Phrase != "ERROR")
 		{
-			SendInput, {BackSpace % MatchLen}
+			SendInput, {BackSpace %MatchLen%}
 			temp := Clipboard
 			Clipboard := Phrase Punct
 			SendInput, ^v
@@ -69,28 +62,28 @@ Loop
 }
 
 OpenIni:
-Run, notepad.exe %IniFile%
-WinWait, % "macros.ini"
-Loop
-{
-	if WinExist("macros.ini")
-		sleep, 1000
-	else
+	Run, notepad.exe %IniFile%
+	WinWait, % "macros.ini"
+	Loop
 	{
-		Reload
-		break
+		if WinExist("macros.ini")
+			sleep, 1000
+		else
+		{
+			Reload
+			break
+		}
 	}
-}
-return
+	return
 
 CheckIdle:
-if (A_TimeIdle > 4000)
-{
-	Suspend, On
-	Suspend, Off
-}
-return
+	if (A_TimeIdle > 30000)
+	{
+		Suspend, On
+		Suspend, Off
+	}
+	return
 
 ManReload:
-Reload
-return
+	Reload
+	return
