@@ -7,7 +7,6 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 ; SetTimer, CheckIdle, 5000
 
-Menu, Tray, Add,% "Parse Clipboard Contents", ParseClipboard
 Menu, Tray, Add,% "Open INI File for Editing", OpenIni
 Menu, Tray, Add,% "Reload This Program", ManReload
 
@@ -19,7 +18,6 @@ SectionList := StrSplit(Sections, "`n")
 
 ParsedIni := {}
 SearchList := []
-
 Loop, Parse, SectionEntries, `n
 {
 	SplitKey := StrSplit(A_LoopField, "=")
@@ -27,6 +25,10 @@ Loop, Parse, SectionEntries, `n
 	ParsedIni[SplitKey[1]] := SplitKey[2]
 }
 
+if (ParsedIni.HasKey("rofl"))
+{
+	MsgBox % "Found it!"
+}
 ;Main program loop
 Loop
 {
@@ -65,27 +67,19 @@ Loop
 	}
 	if (Matcher = "")
 		continue
-	if (ParsedIni.HasKey(Matcher))
+	for k, v in ParsedIni
 	{
 		SetKeyDelay, -1, -1
-		SendInput, {BackSpace %MatchLen%}
-		temp := ClipboardAll
-		Clipboard := ParsedIni[Matcher] Punct
-		SendInput, ^v
-		Clipboard := temp
-		
+		if (k == Matcher)
+		{
+			SendInput, {BackSpace %MatchLen%}
+			temp := ClipboardAll
+			Clipboard := v Punct
+			SendInput, ^v
+			Clipboard := temp
+		}
 	}
 }
-
-ParseClipboard:
-Modify := Clipboard
-for k, v in ParsedIni
-{
-	Modify := RegExReplace(Modify, "\b" k "\b", v)
-}
-Clipboard := Modify
-return
-
 
 OpenIni:
 Run, notepad.exe %IniFile%

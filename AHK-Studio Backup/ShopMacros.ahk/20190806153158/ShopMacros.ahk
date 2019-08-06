@@ -26,6 +26,7 @@ Loop, Parse, SectionEntries, `n
 	SearchList.Push(SplitKey[1])
 	ParsedIni[SplitKey[1]] := SplitKey[2]
 }
+^m::
 
 ;Main program loop
 Loop
@@ -81,7 +82,7 @@ ParseClipboard:
 Modify := Clipboard
 for k, v in ParsedIni
 {
-	Modify := RegExReplace(Modify, "\b" k "\b", v)
+	Modify := RegExReplace(Modify, k, v)
 }
 Clipboard := Modify
 return

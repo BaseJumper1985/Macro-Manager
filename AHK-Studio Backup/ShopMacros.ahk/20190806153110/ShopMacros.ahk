@@ -20,12 +20,17 @@ SectionList := StrSplit(Sections, "`n")
 ParsedIni := {}
 SearchList := []
 
+ParseClipboard:
+BlockSearch(ParsedIni)
+return
+
 Loop, Parse, SectionEntries, `n
 {
 	SplitKey := StrSplit(A_LoopField, "=")
 	SearchList.Push(SplitKey[1])
 	ParsedIni[SplitKey[1]] := SplitKey[2]
 }
+^m::
 
 ;Main program loop
 Loop
@@ -77,15 +82,19 @@ Loop
 	}
 }
 
-ParseClipboard:
-Modify := Clipboard
-for k, v in ParsedIni
+BlockSearch(ListOfTerms)
 {
-	Modify := RegExReplace(Modify, "\b" k "\b", v)
+	SendInput, ^c
+	Modify := Clipboard
+	for k, v in ListOfTerms
+	{
+		MsgBox % k v
+		Modify := RegExReplace(Modify, k, v)
+	}
+	SendInput, % Modify
+	Clipboard := Modify
+	return
 }
-Clipboard := Modify
-return
-
 
 OpenIni:
 Run, notepad.exe %IniFile%

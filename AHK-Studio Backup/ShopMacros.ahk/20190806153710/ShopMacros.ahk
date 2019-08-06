@@ -7,7 +7,7 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 ; SetTimer, CheckIdle, 5000
 
-Menu, Tray, Add,% "Parse Clipboard Contents", ParseClipboard
+Menu, Tray, Add,% "&Parse Clipboard Contents", ParseClipboard
 Menu, Tray, Add,% "Open INI File for Editing", OpenIni
 Menu, Tray, Add,% "Reload This Program", ManReload
 
@@ -26,6 +26,7 @@ Loop, Parse, SectionEntries, `n
 	SearchList.Push(SplitKey[1])
 	ParsedIni[SplitKey[1]] := SplitKey[2]
 }
+^m::
 
 ;Main program loop
 Loop

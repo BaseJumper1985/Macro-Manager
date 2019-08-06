@@ -7,7 +7,6 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 ; SetTimer, CheckIdle, 5000
 
-Menu, Tray, Add,% "Parse Clipboard Contents", ParseClipboard
 Menu, Tray, Add,% "Open INI File for Editing", OpenIni
 Menu, Tray, Add,% "Reload This Program", ManReload
 
@@ -18,14 +17,18 @@ IniRead, SectionEntries, %IniFile%, % "Macros"
 SectionList := StrSplit(Sections, "`n")
 
 ParsedIni := {}
-SearchList := []
-
 Loop, Parse, SectionEntries, `n
 {
 	SplitKey := StrSplit(A_LoopField, "=")
-	SearchList.Push(SplitKey[1])
 	ParsedIni[SplitKey[1]] := SplitKey[2]
 }
+MsgBox % ParsedIni["loon"]
+for k, v in ParsedIni
+{
+	MsgBox % "key is " k " and value is " v 
+}
+
+MsgBox % ParsedIni["key1"]
 
 ;Main program loop
 Loop
@@ -65,27 +68,20 @@ Loop
 	}
 	if (Matcher = "")
 		continue
-	if (ParsedIni.HasKey(Matcher))
+	Loop, % SectionList.MaxIndex()
 	{
 		SetKeyDelay, -1, -1
-		SendInput, {BackSpace %MatchLen%}
-		temp := ClipboardAll
-		Clipboard := ParsedIni[Matcher] Punct
-		SendInput, ^v
-		Clipboard := temp
-		
+		IniRead, Phrase, % IniFile, % SectionList[A_Index], % Matcher
+		if (Phrase != "ERROR")
+		{
+			SendInput, {BackSpace %MatchLen%}
+			temp := Clipboard
+			Clipboard := Phrase Punct
+			SendInput, ^v
+			Clipboard := temp
+		}
 	}
 }
-
-ParseClipboard:
-Modify := Clipboard
-for k, v in ParsedIni
-{
-	Modify := RegExReplace(Modify, "\b" k "\b", v)
-}
-Clipboard := Modify
-return
-
 
 OpenIni:
 Run, notepad.exe %IniFile%

@@ -26,6 +26,7 @@ Loop, Parse, SectionEntries, `n
 	SearchList.Push(SplitKey[1])
 	ParsedIni[SplitKey[1]] := SplitKey[2]
 }
+^m::
 
 ;Main program loop
 Loop
