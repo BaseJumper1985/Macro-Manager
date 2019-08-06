@@ -20,10 +20,10 @@ Installation:
 1. Make sure the “macros.ini” file is in the same folder as “Shop Macros.exe”. The program will be looking in this folder for the “macros.ini” file.
 Configuration:
 1. To create a new macro:
-    a. Run “Shop Macros.exe” then right-click the tray icon that appears.
-    b. In the menu you will find “Open INI file for editing”. Clicking this will open “macros.ini” Notepad for editing.
-    c. Insert a new line with the macro you want to use on the left, an equal sign in the middle, and the result of the macro on the right.
+    1. Run “Shop Macros.exe” then right-click the tray icon that appears.
+    1. In the menu you will find “Open INI file for editing”. Clicking this will open “macros.ini” Notepad for editing.
+    1. Insert a new line with the macro you want to use on the left, an equal sign in the middle, and the result of the macro on the right.
 eg. “nasa = National Aeronautics and Space Administration” minus the quotes.
-    d. Save, then close Notepad and the program will reload with your changes in effect.
-2. To delete a macro:
-    a. Simply remove the line from “macros.ini”. The changes will take effect when you save and close Notepad.
+    1. Save, then close Notepad and the program will reload with your changes in effect.
+1. To delete a macro:
+    1. Simply remove the line from “macros.ini”. The changes will take effect when you save and close Notepad.
