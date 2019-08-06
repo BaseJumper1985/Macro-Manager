@@ -24,7 +24,7 @@ Let me know what you think and please tell me of any ideas or features you would
     1. Run `Shop Macros.exe` then right-click the tray icon that appears.
     1. In the menu you will find `Open INI file for editing`. Clicking this will open `macros.ini` Notepad for editing.
     1. Insert a new line with the macro you want to use on the left, an equal sign in the middle, and the result of the macro on the right.
-eg. *nasa = National Aeronautics and Space Administration* minus the quotes.
+eg. `nasa = National Aeronautics and Space Administration`.
     1. Save, then close Notepad and the program will reload with your changes in effect.
 1. To delete a macro:
     1. Simply remove the line from `macros.ini`. The changes will take effect when you save and close Notepad.
