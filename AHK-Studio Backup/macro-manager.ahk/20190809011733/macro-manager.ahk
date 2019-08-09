@@ -17,6 +17,8 @@ IniRead, Sections, %IniFile%
 IniRead, SectionEntries, %IniFile%, % "Macros"
 SectionList := StrSplit(Sections, "`n")
 
+IniWrite, % "This is some text that is more\nthan one line, maybe.", % IniFile, % "Macros", % "testing"
+
 ParsedIni := {}
 SearchList := []
 
@@ -30,11 +32,9 @@ Loop, Parse, SectionEntries, `n
 	ParsedIni[SplitKey[1]] := SplitKey[2]
 }
 
-PasteText()
+PasteText(some)
 {
-	global
-	Clipboard := ParsedIni[SubStr(A_ThisHotkey, 4)]
-	MsgBox % ParsedIni[SubStr(A_ThisHotkey, 4)]
+	Clipboard := A_ThisHotkey
 	Send, ^v
 	return
 }

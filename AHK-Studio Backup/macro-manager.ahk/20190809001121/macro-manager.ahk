@@ -25,18 +25,15 @@ Loop, Parse, SectionEntries, `n
 {
 	SplitKey := StrSplit(A_LoopField, "=")
 	SearchList.Push(SplitKey[1])
-	fn := Func("PasteText")
-	Hotstring(":X:" SplitKey[1] " ", "PasteText")
+	Hotstring("::" SplitKey[1] " ", SplitKey[2])
 	ParsedIni[SplitKey[1]] := SplitKey[2]
 }
 
-PasteText()
+PasteText(OldText)
 {
-	global
-	Clipboard := ParsedIni[SubStr(A_ThisHotkey, 4)]
-	MsgBox % ParsedIni[SubStr(A_ThisHotkey, 4)]
+	OldLen := StrLen(OldText)
+	Clipboard := ParsedIni[OldText]
 	Send, ^v
-	return
 }
 
 /*

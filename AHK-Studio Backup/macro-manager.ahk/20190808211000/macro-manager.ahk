@@ -2,7 +2,7 @@
 ; #Warn  ; Enable warnings to assist with detecting common errors.
 #Persistent
 #SingleInstance, Force
-SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
+SendMode Play  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 ; SetTimer, CheckIdle, 5000
@@ -25,20 +25,62 @@ Loop, Parse, SectionEntries, `n
 {
 	SplitKey := StrSplit(A_LoopField, "=")
 	SearchList.Push(SplitKey[1])
-	fn := Func("PasteText")
-	Hotstring(":X:" SplitKey[1] " ", "PasteText")
+	Hotstring("::" SplitKey[1] " ", SplitKey[2])
 	ParsedIni[SplitKey[1]] := SplitKey[2]
 }
 
-PasteText()
+/* This may no longer be needed becuase I am stupid.
+	
+;Main program loop
+Loop
 {
-	global
-	Clipboard := ParsedIni[SubStr(A_ThisHotkey, 4)]
-	MsgBox % ParsedIni[SubStr(A_ThisHotkey, 4)]
-	Send, ^v
-	return
+	Matcher := ""
+	MatchLen := 0
+	Punct := ""
+	Loop
+	{
+		Input, Letter, V L1 T2, {Left}{Right}{Up}{Down}{BackSpace}^c^x^a
+		if (ErrorLevel = "TimeOut")
+		{
+			Suspend, On
+			Suspend, Off
+			continue
+		}
+		if Letter is not alpha
+		{
+			if Letter is not digit
+			{
+				MatchLen := MatchLen + 1
+				Punct := Letter
+				break
+			}
+		}
+		if (Letter = "")
+		{
+			Matcher := ""
+			MatchLen := 0
+		}
+		else
+		{
+			Matcher := Matcher Letter
+			MatchLen := StrLen(Matcher)
+		}
+	}
+	if (Matcher = "")
+		continue
+	if (ParsedIni.HasKey(Matcher))
+	{
+		SetKeyDelay, -1, -1
+		SendInput, {BackSpace %MatchLen%}
+		temp := ClipboardAll
+		Clipboard := ParsedIni[Matcher] Punct
+		SendInput, ^v
+		sleep, 500
+		Clipboard := temp
+		ClipWait, 0, 1
+	}
 }
-
+*/
 /*
 	ParseClipboard:
 	MsgBox, 4097, , % "First select the text you want to modify then click Ok"

@@ -28,13 +28,13 @@ Loop, Parse, SectionEntries, `n
 	fn := Func("PasteText")
 	Hotstring(":X:" SplitKey[1] " ", "PasteText")
 	ParsedIni[SplitKey[1]] := SplitKey[2]
+	MsgBox % ParsedIni[1]
 }
 
 PasteText()
 {
-	global
 	Clipboard := ParsedIni[SubStr(A_ThisHotkey, 4)]
-	MsgBox % ParsedIni[SubStr(A_ThisHotkey, 4)]
+	MsgBox % ParsedIni["lol"]
 	Send, ^v
 	return
 }

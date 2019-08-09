@@ -34,7 +34,7 @@ PasteText()
 {
 	global
 	Clipboard := ParsedIni[SubStr(A_ThisHotkey, 4)]
-	MsgBox % ParsedIni[SubStr(A_ThisHotkey, 4)]
+	MsgBox % ParsedIni(SubStr(A_ThisHotkey, 4))
 	Send, ^v
 	return
 }
