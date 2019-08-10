@@ -13,55 +13,55 @@ Menu, Tray, Add,% "Reload This Program", ManReload
 ; Menu, Tray, Add,% "Create a New Macro", NewMacro
 
 ;INI file
-iniFile := A_WorkingDir "\macros.ini"
-IniRead, sections, % iniFile
-IniRead, sectionEntries, % iniFile, % "Macros"
-sectionList := StrSplit(sections, "`n")
+IniFile := A_WorkingDir "\macros.ini"
+IniRead, Sections, % IniFile
+IniRead, SectionEntries, % IniFile, % "Macros"
+SectionList := StrSplit(Sections, "`n")
 
-parsedIni := {} ; Mark as global because functions can't see any variables from outside otherwise.
-searchList := []
-replaceList := []
+ParsedIni := {} ; Mark as global because functions can't see any variables from outside otherwise.
+SearchList := []
 
 ; Create all the HotStrings and make a key lookup for other tasks.
 ParseMacros:
-Loop, Parse, sectionEntries, `n
+Loop, Parse, SectionEntries, `n
 {
-	splitKey := StrSplit(A_LoopField, "=")
-	parsedIni[splitKey[1]] := RegExReplace(splitKey[2], "\\EOL", "`n")
-	cKeys := CasedKeys(splitKey[1])
-	MakeHotstrings(cKeys)
+	SplitKey := StrSplit(A_LoopField, "=")
+	ParsedIni[SplitKey[1]] := RegExReplace(SplitKey[2], "\\EOL", "`n")
+	SearchList.Push(SplitKey[1])
+	Ckeys := CasedKeys(SplitKey[1])
+	MakeHotstrings(Ckeys)
 }
 
-CasedKeys(sKey)
+CasedKeys(Skey)
 {
-	c := {}
-	c["lower"] := Format("{1:l}",      sKey)
-	c["upper"] := Format("{1:U}{2:l}", SubStr(sKey, 1, 1), SubStr(sKey, 2))
-	c["title"] := Format("{1:U}",      sKey)
-	return c
+	C := {}
+	C["lower"] := Format("{1:l}",      Skey)
+	C["upper"] := Format("{1:U}{2:l}", SubStr(Skey, 1, 1), SubStr(Skey, 2))
+	c["title"] := Format("{1:U}",      Skey)
+	return C
 }
 
-MakeHotstrings(cKeys)
+MakeHotstrings(Ckeys)
 {
-	Hotstring(":CX:" cKeys["lower"] " ", "PasteText")
-	Hotstring(":CX:" cKeys["upper"] " ", "PasteUpper")	
-	Hotstring(":CX:" cKeys["title"] " ", "PasteTitled")
+	Hotstring(":CX:" Ckeys["lower"] " ", "PasteText")
+	Hotstring(":CX:" Ckeys["upper"] " ", "PasteUpper")	
+	Hotstring(":CX:" Ckeys["title"] " ", "PasteTitled")
 	return
 }
 
 PasteText(cased = "lower")
 {
 	global
-	cleanKey := Trim(RegExReplace(A_ThisHotkey, "^:\w*:"))
-	cleanKey := format("{1:l}", cleanKey)
-	iniValue := parsedIni[cleanKey]
+	CleanKey := Trim(RegExReplace(A_ThisHotkey, "^:\w*:"))
+	CleanKey := format("{1:l}", CleanKey)
+	IniValue := ParsedIni[CleanKey]
 	if (cased == "upper")
-		output := Format("{1:U}{2}", SubStr(output, 1, 1), SubStr(output, 2))
-	else if (cased == "title")
-		output := Format("{1:t}", output)	
+		Output := Format("{1:U}{2}", SubStr(Output, 1, 1), SubStr(Output, 2))
+	else if (cased == "titled")
+		Output := Format("{1:t}", Output)	
 	else ; (cased == "lower")
-		output := Format("{1:l}", iniValue)
-	Clipboard := output
+		Output := Format("{1:l}", IniValue)
+	Clipboard := Output
 	Send, ^v
 	return
 }
@@ -74,7 +74,7 @@ PasteUpper()
 
 PasteTitled()
 {
-	PasteText("title")
+	PasteText("titled")
 	return
 }
 
@@ -88,7 +88,7 @@ PasteTitled()
 		Sleep, 250
 		Modify := Clipboard
 		Sleep, 250
-		for k, v in parsedIni
+		for k, v in ParsedIni
 		{
 			Modify := RegExReplace(Modify, "\b" k "\b", v)
 		}
@@ -96,11 +96,21 @@ PasteTitled()
 		SendInput, ^v
 	}
 	return
+	
+	
+	
+	CheckIdle:
+	if (A_TimeIdle > 4000)
+	{
+		Suspend, On
+		Suspend, Off
+	}
+	return
 */
 
 OpenIni()
 {
-	Run, notepad.exe %iniFile%
+	Run, notepad.exe %IniFile%
 	WinWait, % "macros.ini"
 	Loop
 	{

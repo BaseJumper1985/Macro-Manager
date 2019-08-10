@@ -13,14 +13,14 @@ Menu, Tray, Add,% "Reload This Program", ManReload
 ; Menu, Tray, Add,% "Create a New Macro", NewMacro
 
 ;INI file
-iniFile := A_WorkingDir "\macros.ini"
-IniRead, sections, % iniFile
-IniRead, sectionEntries, % iniFile, % "Macros"
-sectionList := StrSplit(sections, "`n")
+IniFile := A_WorkingDir "\macros.ini"
+IniRead, Sections, % IniFile
+IniRead, sectionEntries, % IniFile, % "Macros"
+SectionList := StrSplit(Sections, "`n")
 
 parsedIni := {} ; Mark as global because functions can't see any variables from outside otherwise.
 searchList := []
-replaceList := []
+ReplaceList := []
 
 ; Create all the HotStrings and make a key lookup for other tasks.
 ParseMacros:
@@ -32,13 +32,13 @@ Loop, Parse, sectionEntries, `n
 	MakeHotstrings(cKeys)
 }
 
-CasedKeys(sKey)
+CasedKeys(Skey)
 {
-	c := {}
-	c["lower"] := Format("{1:l}",      sKey)
-	c["upper"] := Format("{1:U}{2:l}", SubStr(sKey, 1, 1), SubStr(sKey, 2))
-	c["title"] := Format("{1:U}",      sKey)
-	return c
+	C := {}
+	C["lower"] := Format("{1:l}",      Skey)
+	C["upper"] := Format("{1:U}{2:l}", SubStr(Skey, 1, 1), SubStr(Skey, 2))
+	C["title"] := Format("{1:U}",      Skey)
+	return C
 }
 
 MakeHotstrings(cKeys)
@@ -52,16 +52,16 @@ MakeHotstrings(cKeys)
 PasteText(cased = "lower")
 {
 	global
-	cleanKey := Trim(RegExReplace(A_ThisHotkey, "^:\w*:"))
-	cleanKey := format("{1:l}", cleanKey)
-	iniValue := parsedIni[cleanKey]
+	CleanKey := Trim(RegExReplace(A_ThisHotkey, "^:\w*:"))
+	CleanKey := format("{1:l}", CleanKey)
+	IniValue := parsedIni[CleanKey]
 	if (cased == "upper")
-		output := Format("{1:U}{2}", SubStr(output, 1, 1), SubStr(output, 2))
+		Output := Format("{1:U}{2}", SubStr(Output, 1, 1), SubStr(Output, 2))
 	else if (cased == "title")
-		output := Format("{1:t}", output)	
+		Output := Format("{1:t}", Output)	
 	else ; (cased == "lower")
-		output := Format("{1:l}", iniValue)
-	Clipboard := output
+		Output := Format("{1:l}", IniValue)
+	Clipboard := Output
 	Send, ^v
 	return
 }
@@ -100,7 +100,7 @@ PasteTitled()
 
 OpenIni()
 {
-	Run, notepad.exe %iniFile%
+	Run, notepad.exe %IniFile%
 	WinWait, % "macros.ini"
 	Loop
 	{
