@@ -22,7 +22,7 @@ PopMenu(ByRef item)
 
 
 
-MakeAllHotstrings() ; starts teh main process and creates all the hotstrings from the ini file
+MakeAllHotstrings() ; starts the main process and creates all the hotstrings from the ini file
 
 ; ========================
 ; Make All Hotstrings
@@ -32,21 +32,17 @@ MakeAllHotstrings()
 	; Create all the HotStrings and make a key lookup for other tasks.
 	for k, v in parsedIni
 	{
-		cKeys := CasedKeys(k)
-		SetHotstrings(cKeys)
+		SetHotstrings(k)
 	}
 }
 
 GetIniSectionArray(file, header)
 {
-	sectionEntries := IniRead(file, header)
-	sectionList := StrSplit(sectionEntries, "`n")
-	return sectionList
+	sectionEntry := IniRead(file, header) ; get section from ini file
+	sectionList := StrSplit(sectionEntry, "`n") ; split each line of section into array
+	return sectionList ; return the array
 }
 
-listKeys := ""
-
-; global parsedIni := {} ; Mark as global because functions can't see any variables from outside otherwise.
 
 ParseIni(file, header)
 {
@@ -60,18 +56,21 @@ ParseIni(file, header)
 	return KeyArray
 }
 
-
+; takes input string and creats two other versions eg. lol/Lol/LOL
+; these are used in the different types of key replacements
 CasedKeys(sKey)
 {
 	c := [] ; case modified keys
-	c[1] := Format("{1:l}",      sKey)
-	c[2] := Format("{1:U}{2:l}", SubStr(sKey, 1, 1), SubStr(sKey, 2))
-	c[3] := Format("{1:U}",      sKey)
+	c[1] := Format("{1:l}",      sKey) ; format key all lower case
+	c[2] := Format("{1:U}{2:l}", SubStr(sKey, 1, 1), SubStr(sKey, 2)) ; format key senetence case
+	c[3] := Format("{1:U}",      sKey) ; format key all caps
 	return c
 }
 
-SetHotstrings(cKeys, stringEnable := 1)
+; set hotstring from a given list of cased keys
+SetHotstrings(key, stringEnable := 1)
 {
+	cKeys := CasedKeys(key)
 	for x in cKeys
 	{
 		Hotstring(":CX:" cKeys[x] " ", "PasteText", stringEnable)
@@ -198,8 +197,7 @@ GuiEditHotstrings()
 		newValue := RegExReplace(value, "\R", "\eol")
 		IniWrite(newValue, iniFile, "Macros", key) ; write the new key and value the ini file
 		sleep 80 ; wait for 80 miliseconds as writes may not finish before the program moves on
-		casedKey := CasedKeys(key) ; get the three version of the hotstring
-		SetHotstrings(casedKey, 1) ; create the hotstrings and make sure they are enabled
+		SetHotstrings(key, 1) ; create the hotstrings and make sure they are enabled
 		parsedIni[key] := newValue
 		GuiListUpdate()
 		GuiResets()
@@ -240,8 +238,7 @@ GuiEditHotstrings()
 			parsedIni.Delete(deleter) ; remove key from assosiative array of hotstrings
 			GuiResets() ; destroy and rebuild relavent guis
 			gList.Delete(gList.Value) ; remove matching value from the list
-			delArray := CasedKeys(deleter) ; get cased keys
-			SetHotstrings(delArray, 0) ; desable all hotstring with enable=0
+			SetHotstrings(deleter, 0) ; desable all hotstring with enable=0
 		}
 
 	}
