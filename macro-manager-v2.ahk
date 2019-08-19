@@ -27,11 +27,6 @@ TakeBreak(this) {
 	Suspend()
 	this.ToggleCheck("Take a Break")
 }
-; trayMenu.Add("Insert Hotstring Here.", (*) => GhotUse.Show()) ; open insert hotstring dialog
-
-
-
-
 MakeAllHotstrings() ; starts the main process and creates all the hotstrings from the ini file
 
 ; ========================
@@ -151,7 +146,7 @@ GuiInsertHotstring() {
 	return Gui
 	
 	PlaceText(*) {
-		Gui.Submit() ; always make sure to submit before checking values
+		Gui.Hide() ; always make sure to submit before checking values
 		cKeys := CasedKeys(lHot.Text)
 		for k in radioGroup
 		{
