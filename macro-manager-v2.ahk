@@ -1,5 +1,6 @@
 ; #Warn  ; Enable warnings to assist with detecting common errors.
 #Persistent
+#SingleInstance
 SetWorkingDir A_ScriptDir  ; Ensures a consistent starting directory.
 
 ; global variables: Keep this very small and only when it makes good sense.
@@ -10,7 +11,7 @@ global GhotModify := GuiEditHotstrings() ; get object of the gui for hotstring m
 
 fMenu := MenuCreate() ; create the right click menu for use with the programs gui elements
 fMenu.Add("Insert Hotstring Here.", (*) => GhotUse.Show()) ; open insert hotstring dialog
-fMenu.Add("Convert Text", "ParseSelection") ; open parse text and replace with hotsting results dialog
+fMenu.Add("Convert Text", (*) => ParseSelection()) ; open parse text and replace with hotsting results dialog
 fMenu.Add("Edit Hotstrings", (*) => GhotModify.Show()) ; open modify hotstring dialog
 Hotkey("#RButton", (*) => PopMenu(fMenu)) ; assign control + right mouse button to open a small popup manu
 PopMenu(ByRef item) {
@@ -172,11 +173,11 @@ GuiEditHotstrings() {
 	Gui.Title := "Edit Hotstrings"
 	Gui.SetFont("s12")
 	gList := Gui.Add("ListBox", "section w200 r12", "")
-	gDelete := Gui.Add("Button", "", "Hotstring")
+	gDelete := Gui.Add("Button", "", "Delete Hotstring")
 	gText := Gui.Add("Text", "ys", "New Hotstring")
-	gInput := Gui.Add("Edit", "ys r1 w100") ; hotstring input box
-	gAdd := Gui.Add("Button", "ys h" gInput.Pos.H, "Add")
-	gEdit := Gui.Add("Edit", Format("r12 x{1} y{2} w400" ; hotstring result editor
+	gInput := Gui.Add("Edit", "ys r1 w200") ; hotstring input box
+	gAdd := Gui.Add("Button", "ys h" gInput.Pos.H, "Apply")
+	gEdit := Gui.Add("Edit", Format("r12 x{1} y{2} w400 WantTab" ; hotstring result editor
 							, gText.Pos.X, gText.Pos.Y+35), "Place hotstring result here")
 	gLIst.OnEvent("Change", (*) => SetText()) ; => single line function to assign a value. Java inspired
 	gDelete.OnEvent("Click", (*) => GuiRemoveHotstrings(gList.Text))
@@ -218,7 +219,7 @@ GuiEditHotstrings() {
 
 	GuiRemoveHotstrings(deleter) {
 		; get confirmation from the user before continuing
-		confirm := MsgBox("Are you sure you want to delete the hotstring [" deleter "]`nand its resulting text`n" parsedIni[deleter], "Confirm", "YNC")
+		confirm := MsgBox("Are you sure you want to delete the hotstring [" deleter "]`nand its resulting text`n" parsedIni[deleter], "Confirm", "YN")
 		if (confirm = "Yes") {
 			IniDelete(iniFile, "Macros", deleter) ; remove the line from the ini file
 			parsedIni.Delete(deleter) ; remove key from assosiative array of hotstrings
