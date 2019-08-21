@@ -214,7 +214,7 @@ GuiInsertHotstring() {
 	gList := Gui.Add("ListBox", "section w200 r12", listKeys)
 	gList.Name := "hotstringList"
 	
-	tHot := Gui.Add("Text", "w320 r8" , "this is text")
+	gText := Gui.Add("Text", "w320 r8" , "this is text")
 
 	radioGroup := Gui.Add("Radio", "checked xs+210 ys", "Paste without changes.")
 	Gui.Add("Radio", , "Capitalize first letter.")
@@ -226,7 +226,7 @@ GuiInsertHotstring() {
 
 	gSearch.OnEvent("Change", (*) => SearchList())
 	gSearch.OnEvent("Focus", (*) => Send("^a"))
-	gList.OnEvent("Change", (*) => tHot.Value := parsedIni[gList.Text]) ; => single line function to assign a value. Java inspired
+	gList.OnEvent("Change", (*) => gText.Text := parsedIni[gList.Text]) ; => single line function to assign a value. Java inspired
 	gList.OnEvent("DoubleClick", (*) => PlaceText())
 	gOkay.OnEvent("Click", (*) => PlaceText())
 	gOkay.OnEvent("Click", (*) => GuiListUpdate())
@@ -268,6 +268,8 @@ GuiInsertHotstring() {
 		}
 		if (matchedCount) {
 			gList.Choose(1)
+			gText.Text := parsedIni[gList.Text]
+
 		}
 		;MsgBox(regTerm)
 	}
