@@ -1,11 +1,15 @@
-; #Warn  ; Enable warnings to assist with detecting common errors.
-#Persistent
-#SingleInstance
-SetWorkingDir A_ScriptDir  ; Ensures a consistent starting directory.
+; ========================
+; Auto Execute Section
+; ========================
+#Warn  ; enable warnings to assist with detecting common errors
+#Persistent ; make sure the program does not shut down on its own
+#SingleInstance ; only one copy of the program is allowed open at a time
+SetWorkingDir A_ScriptDir  ; Ensures a consistent starting directory
 
 ; global variables: Keep this very small and only when it makes good sense.
 global iniFile := A_WorkingDir "\macros.ini" ; get the path to the ini file for later use
 global parsedIni := ParseIni(iniFile, "Macros") ; parse the ini file and set the contents of parsedIni to match
+
 global GhotUse := GuiInsertHotstring() ; get object of the gui for hotstring insertion
 global GhotModify := GuiEditHotstrings() ; get object of the gui for hotstring modifcation/addition/deletion
 
@@ -13,7 +17,7 @@ fMenu := MenuCreate() ; create the right click menu for use with the programs gu
 fMenu.Add("Insert Hotstring Here.", (*) => GhotUse.Show()) ; open insert hotstring dialog
 fMenu.Add("Convert Text", (*) => ParseSelection()) ; open parse text and replace with hotsting results dialog
 fMenu.Add("Edit Hotstrings", (*) => GhotModify.Show()) ; open modify hotstring dialog
-Hotkey("#RButton", (*) => PopMenu(fMenu)) ; assign control + right mouse button to open a small popup manu
+Hotkey("#RButton", (*) => fMenu.Show()) ; assign control + right mouse button to open a small popup manu
 PopMenu(ByRef item) {
 	item.Show()
 	return
@@ -28,7 +32,57 @@ TakeBreak(this) {
 	Suspend()
 	this.ToggleCheck("Take a Break")
 }
+
 MakeAllHotstrings() ; starts the main process and creates all the hotstrings from the ini file
+
+/*
+Hotkey("~LShift & ~RShift", (*) => SetCapsLockState("On"))
+Hotkey("~LShift", (*) => SetCapsLockState("Off"))
+Hotkey("~RShift", (*) => SetCapsLockState("Off"))
+
+
++CapsLock::return		; Shift+CapsLock
+!CapsLock::return		; Alt+CapsLock
+^CapsLock::return		; Ctrl+CapsLock
+#CapsLock::return		; Win+CapsLock
+^!CapsLock::return	; Ctrl+Alt+CapsLock
+^!#CapsLock::return	; Ctrl+Alt+Win+CapsLock
+Capslock::
+CaspsEscCtrl() {
+	canLoop := 1
+	Loop {
+		if (GetKeyState("Capslock", "P")) {
+			if (canLoop = 1) {
+				Send("{LControl Down}")
+				canLoop := 0
+			}
+			Sleep(50)
+		}
+		else {
+			Send("{LControl Up}")
+			return
+		}
+	}
+}
+#WheelDown::Send("{Blind}^#{Right}")
+#WheelUp::Send("{Blind}^#{Left}")
+ ; For MouseIsOver, see #If example 1.
+WheelUp::
+MouseGetPos(, , , traybar)
+if (traybar = "ToolbarWindow323")
+	Send "{Volume_Up}"     ; Wheel over taskbar: increase/decrease volume.
+else
+	Send "{WheelUp}"
+return
+WheelDown::
+MouseGetPos(, , , traybar)
+if (traybar = "ToolbarWindow323")
+	Send "{Volume_Down}"     ; Wheel over taskbar: increase/decrease volume.
+else
+	Send "{WheelDown}"
+return
+*/
+
 
 ; ========================
 ; Make All Hotstrings
@@ -82,12 +136,13 @@ SetHotstrings(key, stringEnable := 1) {
 FormatText(hKey) {
 	cleanKey := Trim(RegExReplace(hKey, "^:\w*:"))
 	iniValue := parsedIni[cleanKey] ; parsedIni is global
-	if (RegExMatch(cleanKey, "^[A-Z][a-z]+$"))
+	if (RegExMatch(cleanKey, "^[A-Z][a-z]+$")) {
 		output := Format("{1:U}{2}", SubStr(iniValue, 1, 1), SubStr(iniValue, 2))
-	else if (RegExMatch(cleanKey, "^[A-Z]+$"))
+	} else if (RegExMatch(cleanKey, "^[A-Z]+$")) {
 		output := Format("{1:t}", iniValue)	
-	else
+	} else {
 		output := Format("{1}", iniValue)
+	}
 	return output
 }
 
@@ -121,68 +176,143 @@ ParseSelection(*) {
 ; ========================
 
 ; ------------------------
+; Menubar Controls
+; ------------------------
+
+GuiHotstringMenuBar(helpText) {
+	files := MenuCreate()
+	files.Add("&Exit", (*) => ExitApp())
+	help := MenuCreate()
+	help.Add("Open &Help", (*) => MsgBox(helpText, "Help"))
+	menus := MenuBarCreate()
+	menus.Add("File", files)
+	menus.Add("Help", help)
+	return menus
+}
+
+; ------------------------
 ; Insert Hotstring From List
 ; ------------------------
 
 GuiInsertHotstring() {
-	listItems := []
-	for k, v in parsedIni
-		listItems.Push(k)
+	helpText := "
+	(
+		Use the Search field at the top left to find a hotstring.
+		Pressing Enter will select the top item from the list and
+		paste its result into the last focused window.
+
+		You can also change the formatting of the text by selecting
+		one of the options on the right then Clicking [Okay] or
+		Double Clicking the Hotstring in the List.
+	)"
 	Gui := GuiCreate()
+	Gui.MenuBar := GuiHotstringMenuBar(helpText)
 	Gui.SetFont("s12")
-	lHot := Gui.Add("ListBox", "section w200 r12", listItems)
+	Gui.Title := "Insert Hotstring"
+	listKeys := GetIniKeys()
+	gSearch := Gui.Add("Edit", , "Search")
+	gList := Gui.Add("ListBox", "section w200 r12", listKeys)
+	gList.Name := "hotstringList"
+	
 	tHot := Gui.Add("Text", "w320 r8" , "this is text")
 
-	radioGroup := [Gui.Add("Radio", "checked xs+210 ys", "Paste without changes.")
-				,Gui.Add("Radio", , "Capitalize first letter.")
-				,Gui.Add("Radio", , "Titlecase entire phrase.")]
+	radioGroup := Gui.Add("Radio", "checked xs+210 ys", "Paste without changes.")
+	Gui.Add("Radio", , "Capitalize first letter.")
+	Gui.Add("Radio", , "Titlecase entire phrase.")
+	radioGroup.Name := "radioGroup"
 	
-	bHot := Gui.Add("Button", "default section", "Okay")
-	cHot := Gui.Add("Button", "ys", "Cancel")
+	gOkay := Gui.Add("Button", "default section", "Okay")
+	gCancel := Gui.Add("Button", "ys", "Cancel")
 
-	lHot.OnEvent("Change", (*) => tHot.Value := parsedIni[lHot.Text]) ; => single line function to assign a value. Java inspired
-	lHot.OnEvent("DoubleClick", (*) => PlaceText())
-	bHot.OnEvent("Click", (*) => PlaceText())
-	cHot.OnEvent("Click", (*) => Gui.Hide())
+	gSearch.OnEvent("Change", (*) => SearchList())
+	gSearch.OnEvent("Focus", (*) => Send("^a"))
+	gList.OnEvent("Change", (*) => tHot.Value := parsedIni[gList.Text]) ; => single line function to assign a value. Java inspired
+	gList.OnEvent("DoubleClick", (*) => PlaceText())
+	gOkay.OnEvent("Click", (*) => PlaceText())
+	gOkay.OnEvent("Click", (*) => GuiListUpdate())
+	gCancel.OnEvent("Click", (*) => Gui.Hide())
+	gCancel.OnEvent("Click", (*) => GuiListUpdate())
+	Gui.OnEvent("Size", (*) => GuiListUpdate())
+	Gui.OnEvent("Close", (*) => GuiListUpdate())
 	return Gui
 	
 	PlaceText(*) {
 		Gui.Hide() ; always make sure to submit before checking values
-		cKeys := CasedKeys(lHot.Text)
-		for k in radioGroup
-		{
-			if (radioGroup[k].Value = 1) { ; check if value = 1 to show button is marked
-				Clipboard := FormatText(cKeys[k]) ; show text of radio button to verify
-				radioGroup[k].Value := 0
-			}
-		}
-		radioGroup[1].Value := 1
+		cKeys := CasedKeys(gList.Text)
+		result := Gui.Submit(0)
+		rv := result["radioGroup"]
+		Gui.Control["radioGroup"].Value := 1
+		ClipBoard := FormatText(cKeys[rv])
 		sleep(50)
 		; ClipBoard := parsedIni[l.Text]
 		send("^v")
 	}
-}
 
+	SearchList(*) {
+		term := gSearch.Text
+		letters := StrSplit(term)
+		tempKeyList := GetIniKeys()
+		gList.Delete()
+		matchedCount := 0
+		for x in tempKeyList {
+			regTerm := ".*"
+			for c in  letters {
+				regTerm .= "[" letters[c] "].*"
+			}
+			matched := RegExMatch(tempKeyList[x], regTerm)
+			if (matched) {
+				gList.Add(tempKeyList[x])
+				matchedCount += matched
+			}
+
+		}
+		if (matchedCount) {
+			gList.Choose(1)
+		}
+		;MsgBox(regTerm)
+	}
+}
 
 ; ------------------------
 ; Add/Remove Hostrings
 ; ------------------------
 
 GuiEditHotstrings() {
+	helpText := "
+	(
+		You can use this window to:
+		Create, Edit, and Delete Hotstrings
+
+		To add a new Hotstring, simply fill in the [Box] at
+		the top of the window with a new Hotstring then type the
+		result of the Hotstring in the box below and click [Apply]
+
+		To Delete a Hotstring, select the Hotstring from the List
+		on the left then click [Delete Hotstring]
+
+		To Edit a Hotstring, select a Hotstring from the List on the
+		left then change result of the Hotstring in the [Box] to
+		the right before clicking [Apply]
+	)"
 	Gui := GuiCreate()
 	Gui.Title := "Edit Hotstrings"
+	Gui.MenuBar := GuiHotstringMenuBar(helpText)
 	Gui.SetFont("s12")
-	gList := Gui.Add("ListBox", "section w200 r12", "")
+	listKeys := GetIniKeys()
+	gList := Gui.Add("ListBox", "section w200 r12", listKeys)
+	gList.Name := "hotstringList"
 	gDelete := Gui.Add("Button", "", "Delete Hotstring")
 	gText := Gui.Add("Text", "ys", "New Hotstring")
 	gInput := Gui.Add("Edit", "ys r1 w200") ; hotstring input box
 	gAdd := Gui.Add("Button", "ys h" gInput.Pos.H, "Apply")
 	gEdit := Gui.Add("Edit", Format("r12 x{1} y{2} w400 WantTab" ; hotstring result editor
 							, gText.Pos.X, gText.Pos.Y+35), "Place hotstring result here")
+	
+	
 	gLIst.OnEvent("Change", (*) => SetText()) ; => single line function to assign a value. Java inspired
 	gDelete.OnEvent("Click", (*) => GuiRemoveHotstrings(gList.Text))
 	gAdd.OnEvent("Click", (*) => GuiModifyLine(gInput.Text, gEdit.Text))
-	GuiListUpdate()
+	;GuiListUpdate()
 	return Gui
 
 	GuiModifyLine(key, value) {
@@ -192,7 +322,7 @@ GuiEditHotstrings() {
 		SetHotstrings(key, 1) ; create the hotstrings and make sure they are enabled
 		parsedIni[key] := newValue
 		GuiListUpdate()
-		GuiResets()
+		;GuiResets()
 	}
 
 	; set the input field and the edit box the reflect the current selection
@@ -200,15 +330,6 @@ GuiEditHotstrings() {
 	SetText() {
 		gEdit.Text := parsedIni[gList.Text]
 		gInput.Text := gList.Text
-	}
-
-	; update the list box contents to reflect the new contents of the parsedIni array
-	GuiListUpdate() {
-		listItems := []
-		gList.Delete()
-		for k, v in parsedIni
-			listItems.Push(k)
-		gLIst.Add(listItems)
 	}
 
 	; resets the hotstring insertion gui so it gets any channged values
@@ -223,17 +344,31 @@ GuiEditHotstrings() {
 		if (confirm = "Yes") {
 			IniDelete(iniFile, "Macros", deleter) ; remove the line from the ini file
 			parsedIni.Delete(deleter) ; remove key from assosiative array of hotstrings
-			GuiResets() ; destroy and rebuild relavent guis
-			gList.Delete(gList.Value) ; remove matching value from the list
+			GuiListUpdate() ; destroy and rebuild relavent guis
+			;gList.Delete(gList.Value) ; remove matching value from the list
 			SetHotstrings(deleter, 0) ; desable all hotstring with (enable=0)
 		}
 
 	}
 }
 
+; update the list box contents to reflect the new contents of the parsedIni array
+GetIniKeys() {
+	listItems := []
+	for k, v in parsedIni {
+		listItems.Push(k)
+	}
+	return listItems
+}
 
-;gHots := new EditHotstrings()
-;gHots.text := "new text"
+GuiListUpdate() {
+	g := [GhotUse, GhotModify]
+	for x in g {
+		l := g[x].Control["hotstringList"]
+		l.Delete()
+		l.Add(GetIniKeys())
+	}
+}
 
 ; ========================
 ; 
