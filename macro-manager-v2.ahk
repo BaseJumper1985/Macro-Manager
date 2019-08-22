@@ -23,6 +23,8 @@ PopMenu(ByRef item) {
 	return
 }
 
+Hotkey("#h", (*) => GhotUse.Show())
+
 trayMenu := A_TrayMenu
 trayMenu.Delete()
 trayMenu.Add("Edit Hotstrings", (*) => GhotModify.Show()) ; open modify hotstring dialog
@@ -217,8 +219,8 @@ GuiInsertHotstring() {
 	gText := Gui.Add("Text", "w320 r8" , "this is text")
 
 	radioGroup := Gui.Add("Radio", "checked xs+210 ys", "Paste without changes.")
-	Gui.Add("Radio", , "Capitalize first letter.")
-	Gui.Add("Radio", , "Titlecase entire phrase.")
+	Gui.Add("Radio", , "Capitalize First Letter.")
+	Gui.Add("Radio", , "Title Case Entire Phrase.")
 	radioGroup.Name := "radioGroup"
 	
 	gOkay := Gui.Add("Button", "default section", "Okay")
@@ -243,7 +245,8 @@ GuiInsertHotstring() {
 		rv := result["radioGroup"]
 		Gui.Control["radioGroup"].Value := 1
 		ClipBoard := FormatText(cKeys[rv])
-		sleep(50)
+		WinWaitNotActive("Insert Hotstring")
+		; sleep(50)
 		; ClipBoard := parsedIni[l.Text]
 		send("^v")
 	}
