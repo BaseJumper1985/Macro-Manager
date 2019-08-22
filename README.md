@@ -1,5 +1,5 @@
 # Macro-Manager
-A program in AutoHotKey v2 for the creation and management of dynamic macros and hot strings
+A program in AutoHotKey v2 for the creation and management of dynamic macros and Hotstrings
 
 ### Description
 Create and manage Hotstrings using a simple user interface. Hotstring triggers are unambiguous requiring input of a **Double-Space** (*or space + punctuation*) to trigger. Thus eliminating the problem many other programs share of accidental triggers.
