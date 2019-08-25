@@ -1,7 +1,7 @@
 ; ========================
 ; Auto Execute Section
 ; ========================
-#Warn  ; enable warnings to assist with detecting common errors
+;#Warn  ; enable warnings to assist with detecting common errors
 #Persistent ; make sure the program does not shut down on its own
 #SingleInstance ; only one copy of the program is allowed open at a time
 SetWorkingDir A_ScriptDir  ; Ensures a consistent starting directory
@@ -23,7 +23,15 @@ PopMenu(ByRef item) {
 	return
 }
 
-Hotkey("#h", (*) => GhotUse.Show())
+Hotkey("$#h", (*) => OpenInsertMenu())
+OpenInsertMenu() {
+	GhotUse.Show()
+	gList := GhotUse.Control["hotstringList"]
+	gList.Delete()
+	gList.Add(GetIniKeys())
+}
+
+Hotstring(":*:dt  ", Format("{1}/{2}/{3} {4}:{5}", A_YYYY, A_MM, A_DD, A_Hour, A_Min))
 
 trayMenu := A_TrayMenu
 trayMenu.Delete()
@@ -37,12 +45,10 @@ TakeBreak(this) {
 
 MakeAllHotstrings() ; starts the main process and creates all the hotstrings from the ini file
 
-/*
-Hotkey("~LShift & ~RShift", (*) => SetCapsLockState("On"))
-Hotkey("~LShift", (*) => SetCapsLockState("Off"))
-Hotkey("~RShift", (*) => SetCapsLockState("Off"))
 
-
+; Kill all other combinations of capslock. These can cause capslock to be triggered
+; even when it is disabled. Basically attempts to trigger the hotkey combo but returns
+; nothing.
 +CapsLock::return		; Shift+CapsLock
 !CapsLock::return		; Alt+CapsLock
 ^CapsLock::return		; Ctrl+CapsLock
@@ -51,21 +57,21 @@ Hotkey("~RShift", (*) => SetCapsLockState("Off"))
 ^!#CapsLock::return	; Ctrl+Alt+Win+CapsLock
 Capslock::
 CaspsEscCtrl() {
-	canLoop := 1
-	Loop {
-		if (GetKeyState("Capslock", "P")) {
-			if (canLoop = 1) {
-				Send("{LControl Down}")
-				canLoop := 0
-			}
-			Sleep(50)
-		}
-		else {
-			Send("{LControl Up}")
-			return
-		}
+	Send ("{LControl Down}")
+	KeyWait "Capslock"
+	SetCapsLockState("Off")
+	Send ("{LControl Up}")
+	if (A_TimeSinceThisHotkey < 300 and A_PriorKey = "Capslock") {
+		Send ("{Esc}")
 	}
+	return
 }
+
+/*
+Hotkey("~LShift & ~RShift", (*) => SetCapsLockState("On"))
+Hotkey("~LShift", (*) => SetCapsLockState("Off"))
+Hotkey("~RShift", (*) => SetCapsLockState("Off"))
+
 #WheelDown::Send("{Blind}^#{Right}")
 #WheelUp::Send("{Blind}^#{Left}")
  ; For MouseIsOver, see #If example 1.
@@ -207,18 +213,25 @@ GuiInsertHotstring() {
 		one of the options on the right then Clicking [Okay] or
 		Double Clicking the Hotstring in the List.
 	)"
+	leftWidth := 400
+	preview := []
+	for k, v in parsedIni {
+		preview.Push(v)
+	}
 	Gui := GuiCreate()
 	Gui.MenuBar := GuiHotstringMenuBar(helpText)
 	Gui.SetFont("s12")
 	Gui.Title := "Insert Hotstring"
 	listKeys := GetIniKeys()
-	gSearch := Gui.Add("Edit", , "Search")
-	gList := Gui.Add("ListBox", "section w200 r12", listKeys)
+	gSearch := Gui.Add("Edit", "w" leftWidth , "Search")
+	
+	gSearch.Name := "searchBox"
+	gList := Gui.Add("ListBox", "section w" leftWidth " r12", listKeys)
 	gList.Name := "hotstringList"
 	
 	gText := Gui.Add("Text", "w320 r8" , "this is text")
 
-	radioGroup := Gui.Add("Radio", "checked xs+210 ys", "Paste without changes.")
+	radioGroup := Gui.Add("Radio", "checked ys", "Paste without changes.")
 	Gui.Add("Radio", , "Capitalize First Letter.")
 	Gui.Add("Radio", , "Title Case Entire Phrase.")
 	radioGroup.Name := "radioGroup"
@@ -254,17 +267,17 @@ GuiInsertHotstring() {
 	SearchList(*) {
 		term := gSearch.Text
 		letters := StrSplit(term)
-		tempKeyList := GetIniKeys()
+		;tempKeyList := GetIniKeys()
 		gList.Delete()
 		matchedCount := 0
-		for x in tempKeyList {
+		for k, value in parsedIni {
 			regTerm := ".*"
-			for c in  letters {
-				regTerm .= "[" letters[c] "].*"
+			for inl, letter in  letters {
+				regTerm .= "[" letter "].*"
 			}
-			matched := RegExMatch(tempKeyList[x], regTerm)
+			matched := RegExMatch(k, "i)" regTerm)
 			if (matched) {
-				gList.Add(tempKeyList[x])
+				gList.Add(k)
 				matchedCount += matched
 			}
 
