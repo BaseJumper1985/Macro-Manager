@@ -20,11 +20,31 @@ global hotstrings := hTools.ParseSection("Macros") ; parse the ini file and set 
 global GhotUse := GuiInsertHotstring() ; get object of the gui for hotstring insertion
 global GhotModify := GuiEditHotstrings() ; get object of the gui for hotstring modifcation/addition/deletion
 
-if (FileExist(A_WorkingDir "\macros.ini"))
-if (!FileExist(configFolder))
-    DirCreate(configFolder)
-if (!FileExist(iniFile))
-    FileAppend("", iniFile)
+SetIni()
+SetIni() {
+    if (!FileExist(A_WorkingDir "\macros.ini") and !FileExist(iniFile)) {
+        gWidth := 300
+        gIni := GuiCreate()
+        gText := gIni.Add("Text", "center w" gWidth, "No macros.ini file found. Please select where you want the ini file to be stored.")
+        gLocal := gIni.Add("Button", "section w" gWidth/3, "Local")
+        gAppData := gIni.Add("Button", "ys w" gWidth/3, "AppData")
+        gCancel := gIni.Add("Button", "ys w" gWidth/3, "Cancel")
+        ToolTip(gLocal.Pos.W)
+        gLocal.OnEvent("Click", (*) => IniCreate("Local"))
+        gAppData.OnEvent("Click", (*) => IniCreate("AppData"))
+        gCancel.OnEvent("Click", (*) => gIni.Destroy())
+        gIni.Show()
+    }
+    IniCreate(result, *) {
+        if (result = "AppData") {
+            DirCreate(configFolder)
+            FileAppend("", iniFile)
+        }
+        if (result = "Local")
+            FileAppend("", A_WorkingDir "\macros.ini")
+        gIni.Destroy()
+    }
+}
 
 fMenu := MenuCreate() ; create the right click menu for use with the prograMS gui elements
 fMenu.Add("Insert Hotstring Here.", (*) => OpenInsertMenu()) ; open insert hotstring dialog
