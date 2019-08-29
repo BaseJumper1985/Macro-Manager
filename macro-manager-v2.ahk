@@ -11,14 +11,22 @@
 SetWorkingDir A_ScriptDir  ; Ensures a consistent starting directory
 
 ; global variables: Keep this very small and only when it makes good sense.
-global iniFile := A_WorkingDir "\macros.ini" ; get the path to the ini file for later use
-global hTools := new HotstringTools()
+ini := "\macros.ini"
+global configFolder := A_AppData "\macro-manager"
+global iniFile := configFolder ini ; get the path to the ini file for later use
+global hTools := new HotstringTools(iniFile)
 global hotstrings := hTools.ParseSection("Macros") ; parse the ini file and set the contents of hotstrings to match
 
 global GhotUse := GuiInsertHotstring() ; get object of the gui for hotstring insertion
 global GhotModify := GuiEditHotstrings() ; get object of the gui for hotstring modifcation/addition/deletion
 
-fMenu := MenuCreate() ; create the right click menu for use with the programs gui elements
+if (FileExist(A_WorkingDir "\macros.ini"))
+if (!FileExist(configFolder))
+    DirCreate(configFolder)
+if (!FileExist(iniFile))
+    FileAppend("", iniFile)
+
+fMenu := MenuCreate() ; create the right click menu for use with the prograMS gui elements
 fMenu.Add("Insert Hotstring Here.", (*) => OpenInsertMenu()) ; open insert hotstring dialog
 fMenu.Add("Convert Text", (*) => ParseSelection()) ; open parse text and replace with hotsting results dialog
 fMenu.Add("Edit Hotstrings", (*) => GhotModify.Show()) ; open modify hotstring dialog
@@ -64,20 +72,9 @@ GetIniSectionArray(file, header) {
     return sectionList ; return the array
 }
 
-
-ParseIni(file, header) {
-    IniArray := {}
-    SectionArray := GetIniSectionArray(file, header)
-    for k, v in SectionArray {
-        splitKey := StrSplit(v, "=")
-        splitKey[2]
-        IniArray[splitKey[1]] := RegExReplace(splitKey[2], "i)\\eol", "`n")
-    }
-    return IniArray
-}
-
-; takes input string and creats two other versions eg. lol/Lol/LOL
-; these are used in the different types of key replacements
+; takes input string and creates two other versions eg. lol/Lol/LOL
+; these are used in the different types of key replacements that deal
+; with capitalization and the like.
 CasedKeys(sKey) {
     c := [] ; case modified keys
     c[1] := Format("{1:l}",      sKey) ; format key all lower case
@@ -200,7 +197,6 @@ GuiInsertHotstring() {
     gList.OnEvent("ItemFocus", (*) => gText.Text := hotstrings[ListSelection("T")].text) ; => single line function to assign a value. Java inspired
     gList.OnEvent("DoubleClick", (*) => PlaceText())
     gOkay.OnEvent("Click", (*) => PlaceText())
-    gOkay.OnEvent("Click", (*) => GuiListUpdate())
     gCancel.OnEvent("Click", (*) => Gui.Hide())
     gCancel.OnEvent("Click", (*) => GuiListUpdate())
     Gui.OnEvent("Size", (*) => GuiListUpdate())
@@ -229,16 +225,16 @@ GuiInsertHotstring() {
     SearchListView(*) {
         term := gSearch.Text
         letters := StrSplit(term)
-        ;tempKeyList := GetIniKeys()
+        gList.Opt("-Redraw")
         gList.Delete()
 		rowNum := gList.GetNext()
-		;textEntry := gList.GetText(rowNum)
         matchedCount := 0
         for k, v in hotstrings {
-            regTerm := ".*"
+            regTerm := "^.*"
             for inl, letter in  letters {
-                regTerm .= "[" letter "].*"
+                regTerm .= letter ".*"
             }
+            regTerm .= "$"
             haystack := (v.name != "") ? v.name : k
             matched := RegExMatch(haystack, "i)" regTerm)
             if (matched) {
@@ -253,6 +249,8 @@ GuiInsertHotstring() {
             gText.Text := hotstrings[gList.Text]
 
         }
+        gList.Opt("+Redraw")
+        ToolTip(regTerm)
     }
 }
 
@@ -306,6 +304,7 @@ GuiEditHotstrings() {
     return Gui
 
     GuiModifyLine(key, text, name := "") {
+        key := StrLower(key)
         newText := RegExReplace(text, "\R", "\eol")
         keyName := (name != "") ? "${" name "}" : ""
         canWrite := "Yes"
@@ -317,20 +316,18 @@ GuiEditHotstrings() {
             canWrite := MsgBox("There is already an entry called [" key "]`nWould you like to replace it?", "Overwrite", "YN")
         }
         if (canWrite = "Yes") {
-            IniWrite(keyName newText, iniFile, "Macros", key) ; write the new key and value the ini file
-            if (ErrorLevel) { 
+            if (!FileExist(iniFile) or regexmatch(FileExist(iniFile), ".*R.*")) { 
                 canWrite := "No"
-                MsgBox("Cannot write to the file.`nMake sure you are running the program from`na location with proper access rights.")
+                MsgBox("Cannot write to the file or file does not exist.`nMake sure the program has write access to the [macros.ini] file.")
             }
             else { 
+                IniWrite(keyName newText, iniFile, "Macros", key) ; write the new key and value the ini file
                 sleep 80 ; wait for 80 miliseconds as writes may not finish before the program moves on
                 SetHotstrings(key, 1) ; create the hotstrings and make sure they are enabled
                 hotstrings[key] := hTools.AddEntry(name, text)
                 GuiListUpdate()
             }
         }
-        
-        ;GuiResets()
     }
 
     ; set the input field and the edit box the reflect the current selection
@@ -381,10 +378,12 @@ GuiListUpdate() {
     g := [GhotUse, GhotModify]
     for x in g {
         l := g[x].Control["hotstringList"]
+        l.Opt("-Redraw")
         l.Delete()
 		for k, v in hotstrings {
 			l.Add(, k, v.name)
 		}
+        l.Opt("+Redraw")
     }
 }
 

@@ -3,22 +3,18 @@
 ; SetKeyDelay, -1, -1 ; Remove short delay done automatically after every keystroke sent by Send or ControlSend
 ; SetMouseDelay, -1 ; Remove short delay done automatically after Click and MouseMove/Click/Drag
 
-class KeyEntry {
-    name := ""
-    text := ""
-}
-
 class HotstringTools {
-    static IniFile := A_WorkingDir "\macros.ini"
+    static IniFile := ""
     static HotEntries := {}
-    __New() {
-
+    __New(fileInput) {
+        this.IniFile := fileInput
     }
     ParseSection(header) { 
         IniArray := {}
         SectionArray := this._GetIniSectionArray(header)
         for k, v in SectionArray {
-            entry := new KeyEntry()
+            ;entry := new KeyEntry()
+            entry := {}
             splitKey := StrSplit(v, "=")
             key := splitkey[1]
             text := splitkey[2]
@@ -39,7 +35,7 @@ class HotstringTools {
         return sectionList ; return the array
     }
     AddEntry(name, text) {
-        entry := new KeyEntry()
+        entry := {}
         entry.name := name
         entry.text := text
         return entry
@@ -50,13 +46,10 @@ class HotstringTools {
 }
 
 /*
-ini := new HotstringTools()
-tester := ini.hotstrings["test"]
-entries := ini.ParseSection("Macros")
+class ListRightClick {
+    rightMenu := {}
+    __New() {
 
-for k, v in entries {
-    MsgBox(k)
-    MsgBox(v.name)
-    MsgBox(v.text)
+    }
 }
 */
