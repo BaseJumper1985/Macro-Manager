@@ -12,7 +12,7 @@ SetWorkingDir A_ScriptDir  ; Ensures a consistent starting directory
 
 ; global variables: Keep this very small and only when it makes good sense.
 ini := "\macros.ini"
-global configFolder := A_AppData "\macro-manager"
+configFolder := A_AppData "\macro-manager"
 global iniFile := configFolder ini ; get the path to the ini file for later use
 global hTools := new HotstringTools(iniFile)
 global hotstrings := hTools.ParseSection("Macros") ; parse the ini file and set the contents of hotstrings to match
@@ -20,16 +20,26 @@ global hotstrings := hTools.ParseSection("Macros") ; parse the ini file and set 
 global GhotUse := GuiInsertHotstring() ; get object of the gui for hotstring insertion
 global GhotModify := GuiEditHotstrings() ; get object of the gui for hotstring modifcation/addition/deletion
 
-SetIni()
 SetIni() {
     if (!FileExist(A_WorkingDir "\macros.ini") and !FileExist(iniFile)) {
-        gWidth := 300
+        gWidth := 400
         gIni := GuiCreate()
-        gText := gIni.Add("Text", "center w" gWidth, "No macros.ini file found. Please select where you want the ini file to be stored.")
+        gIni.SetFont("s11")
+        gText := gIni.Add("Text", "center w" gWidth, "
+            (
+                No macros.ini file found. Please select where you
+                want the ini file to be stored. You can store it
+                Locally in the same folder as the program, or it
+                can be stored in the AppData folder in
+                \Users\<UserName>\AppData\Roaming\macro-manager
+                AppData is the prefered location as this will
+                mean the program will always be able to access
+                it's config and macro files no matter where the
+                program is run from on this system.
+            )" )
         gLocal := gIni.Add("Button", "section w" gWidth/3, "Local")
         gAppData := gIni.Add("Button", "ys w" gWidth/3, "AppData")
         gCancel := gIni.Add("Button", "ys w" gWidth/3, "Cancel")
-        ToolTip(gLocal.Pos.W)
         gLocal.OnEvent("Click", (*) => IniCreate("Local"))
         gAppData.OnEvent("Click", (*) => IniCreate("AppData"))
         gCancel.OnEvent("Click", (*) => gIni.Destroy())
@@ -40,8 +50,10 @@ SetIni() {
             DirCreate(configFolder)
             FileAppend("", iniFile)
         }
-        if (result = "Local")
+        if (result = "Local") {
             FileAppend("", A_WorkingDir "\macros.ini")
+            IniFile := A_AppData "\macros.ini"
+        }
         gIni.Destroy()
     }
 }
