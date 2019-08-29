@@ -347,7 +347,6 @@ GuiEditHotstrings() {
 
     GuiRemoveHotstrings(deleter) {
         ; get confirmation from the user before continuing
-		MsgBox(deleter)
         confirm := MsgBox("Are you sure you want to delete the hotstring [" deleter "]`nand its resulting text`n" hotstrings[deleter].text, "Confirm", "YN")
         if (confirm = "Yes") {
 			IniDelete(iniFile, "Macros", deleter) ; remove the line from the ini file
