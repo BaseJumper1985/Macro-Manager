@@ -14,16 +14,30 @@ SetWorkingDir A_ScriptDir  ; Ensures a consistent starting directory
 ini := "\macros.ini"
 configFolder := A_AppData "\macro-manager"
 global iniFile := configFolder ini ; get the path to the ini file for later use
-global hst := new HotstringTools(iniFile)
-global hotstrings := hst.ParseSection("Macros") ; parse the ini file and set the contents of hotstrings to match
-
-global GhotUse := GuiInsertHotstring() ; get object of the gui for hotstring insertion
-global GhotModify := GuiEditHotstrings() ; get object of the gui for hotstring modifcation/addition/deletion
-
 if (!FileExist(iniFile)) {
     DirCreate(configFolder)
     FileAppend("", iniFile)
 }
+
+global hst := new HotstringTools(iniFile)
+hst.GetHotstrings("Macros") ; parse the ini file and set the contents of hotstrings to match
+;global hotstrings := hst.GetHotstrings("Macros") ; parse the ini file and set the contents of hotstrings to match
+
+/*
+for tempk, tempv in hotstrings {
+    IniWrite(hst.MakeIniEntry(tempk), iniFile, "Macros", tempk) ; write the new key and value the ini file
+}
+*/
+
+SetTimer((*) => CheckIdle(), 5000)
+CheckIdle() {
+    if (A_TimeIdlePhysical > 5000) {
+        hst.SaveModified()
+    }
+}
+
+global GhotUse := GuiInsertHotstring() ; get object of the gui for hotstring insertion
+global GhotModify := GuiEditHotstrings() ; get object of the gui for hotstring modifcation/addition/deletion
 
 fMenu := MenuCreate() ; create the right click menu for use with the prograMS gui elements
 fMenu.Add("Insert Hotstring Here.", (*) => OpenInsertMenu()) ; open insert hotstring dialog
@@ -50,8 +64,10 @@ trayMenu.Add("Take a Break", (*) => TakeBreak(trayMenu))
 trayMenu.Add("Exit", (*) => ExitApp())
 TakeBreak(this) {
     Suspend()
-    this.ToggleCheck("Take a Break")
+    this.ToggleCheck("Pause Hotkeys")
 }
+
+imex := new ImportExport()
 
 MakeAllHotstrings() ; starts the main process and creates all the hotstrings from the ini file
 
@@ -60,16 +76,18 @@ MakeAllHotstrings() ; starts the main process and creates all the hotstrings fro
 ; ========================
 MakeAllHotstrings() {
     ; Create all the HotStrings and make a key lookup for other tasks.
-    for k in hotstrings {
+    for k in hst.macros {
         SetHotstrings(k)
     }
 }
 
+/*
 GetIniSectionArray(file, header) {
     sectionEntry := IniRead(file, header) ; get section from ini file
     sectionList := StrSplit(sectionEntry, "`n") ; split each line of section into array
     return sectionList ; return the array
 }
+*/
 
 ; takes input string and creates two other versions eg. lol/Lol/LOL
 ; these are used in the different types of key replacements that deal
@@ -85,32 +103,33 @@ CasedKeys(sKey) {
 ; set hotstring from a given list of cased keys
 SetHotstrings(key, stringEnable := 1) {
     cKeys := CasedKeys(key)
-    for x in cKeys {
-        Hotstring(":CX:" cKeys[x] " ", (*) => PasteText(A_ThisHotkey), stringEnable)
+    for i, x in cKeys {
+        Hotstring(":CX:" x " ", (*) => PasteText(A_ThisHotkey), stringEnable)
     }
     return
 }
 
-FormatText(hKey) {
-    cleanKey := Trim(RegExReplace(hKey, "^:\w*:"))
-    iniText := hotstrings[cleanKey].text ; hotstrings is global
-    if (RegExMatch(cleanKey, "^[A-Z][a-z]+$")) {
-        output := Format("{1:U}{2}", SubStr(iniText, 1, 1), SubStr(iniText, 2))
+FormatText(key) {
+    iniText := hst.Text[key] ; hotstrings is global
+    if (RegExMatch(key, "^[A-Z][a-z]+$")) {
+        out := Format("{1:U}{2}", SubStr(iniText, 1, 1), SubStr(iniText, 2))
     }
-    else if (RegExMatch(cleanKey, "^[A-Z]+$")) {
-        output := Format("{1:t}", iniText)    
+    else if (RegExMatch(key, "^[A-Z]+$")) {
+        out := Format("{1:t}", iniText)    
     }
     else {
-        output := Format("{1}", iniText)
+        out := Format("{1}", iniText)
     }
-    return output
+    return out
 }
 
-PasteText(key) {
-    output := FormatText(key)
-    Clipboard := output
+PasteText(hKey) {
+    key := Trim(RegExReplace(hKey, "^:\w*:"))
+    out := FormatText(key)
+    Clipboard := out
     sleep(50)
     Send("^v")
+    hst.Used[key]++
     return
 }
 
@@ -121,7 +140,7 @@ ParseSelection(*) {
         Sleep(250)
         Modify := Clipboard
         Sleep(250)
-        for k, v in hotstrings { ; hotstrings is global
+        for k, v in hst.macros { ; hotstrings is global
             Modify := RegExReplace(Modify, "i)\b" k "\b", v.text)
         }
         Clipboard := Modify
@@ -175,12 +194,12 @@ GuiInsertHotstring() {
     
     gSearch.Name := "searchBox"
     gList := Gui.Add("ListView", "section w" leftWidth " r12", "Trigger|Name")
-    for k, v in hotstrings {
+    for k, v in hst.macros {
         gList.Add(, k, v.name)
     }
     gList.Name := "hotstringList"
     
-    gText := Gui.Add("Text", "w320 r8" , "this is text")
+    gText := Gui.Add("Text", "r8 w400" , "Hotstring Preview")
 
     radioGroup := Gui.Add("Radio", "checked ys", "Paste without changes.")
     Gui.Add("Radio", , "Capitalize First Letter.")
@@ -192,7 +211,7 @@ GuiInsertHotstring() {
 
     gSearch.OnEvent("Change", (*) => SearchListView())
     gSearch.OnEvent("Focus", (*) => Send("^a"))
-    gList.OnEvent("ItemFocus", (*) => gText.Text := hotstrings[ListSelection("T")].text) ; => single line function to assign a value. Java inspired
+    gList.OnEvent("ItemFocus", (*) => OnFocus()) ; => single line function to assign a value. Java inspired
     gList.OnEvent("DoubleClick", (*) => PlaceText())
     gOkay.OnEvent("Click", (*) => PlaceText())
     gCancel.OnEvent("Click", (*) => Gui.Hide())
@@ -201,6 +220,10 @@ GuiInsertHotstring() {
     Gui.OnEvent("Close", (*) => GuiListUpdate())
     return Gui
 
+    OnFocus() {
+        gText.Pos.W := 700
+        gText.Text := hst.Text[ListSelection("T")]
+    }
 	ListSelection(type := "T") {
 		if(type = "T") {
 			return gList.GetText(gList.GetNext())
@@ -208,7 +231,7 @@ GuiInsertHotstring() {
 	}
     
     PlaceText(*) {
-        Gui.Hide() ; always make sure to submit before checking values
+        Gui.Hide()
 		rowNum := gList.GetNext()
 		rowText := gList.GetText(rowNum)
         cKeys := CasedKeys(rowText)
@@ -218,6 +241,7 @@ GuiInsertHotstring() {
         ClipBoard := FormatText(cKeys[rv])
         WinWaitNotActive("Insert Hotstring")
         send("^v")
+        hst.Used[rowText]++
     }
 
     SearchListView(*) {
@@ -227,7 +251,7 @@ GuiInsertHotstring() {
         gList.Delete()
 		rowNum := gList.GetNext()
         matchedCount := 0
-        for k, v in hotstrings {
+        for k, v in hst.macros {
             regTerm := "^.*"
             for inl, letter in  letters {
                 regTerm .= letter ".*"
@@ -242,9 +266,9 @@ GuiInsertHotstring() {
 
         }
         if (matchedCount) {
-            ;gList.Choose(1)
 			gList.Modify(rowNum, "+select")
-            gText.Text := hotstrings[gList.Text]
+            firstRow := gList.GetText(gList.GetNext())
+            gText.Text := hst.Text[firstRow]
 
         }
         gList.Opt("+Redraw")
@@ -278,7 +302,7 @@ GuiEditHotstrings() {
     Gui.MenuBar := GuiHotstringMenuBar(helpText)
     Gui.SetFont("s11")
 	gList := Gui.Add("ListView", "section w" leftWidth " r12", "Trigger|Name")
-    for k, v in hotstrings {
+    for k, v in hst.macros {
         gList.Add(, k, v.name)
     }
     gList.Name := "hotstringList"
@@ -305,8 +329,7 @@ GuiEditHotstrings() {
             canWrite := "No"
             MsgBox("You Cannot leave the [New Hotstring] field blank.")
         }
-        ;else if (IniRead(iniFile, "Macros", key, "{ERROR}") != "{ERROR}") { 
-        else if (hotstrings[key]) { 
+        else if (hst.macros[key]) { 
             canWrite := MsgBox("There is already an entry called [" key "]`nWould you like to replace it?", "Overwrite", "YN")
         }
         if (canWrite = "Yes") {
@@ -316,17 +339,8 @@ GuiEditHotstrings() {
             }
             else {
                 key := StrLower(key)
-                keyName := hst.MakeLabel("name", name)
-                newText := hst.MakeLabel("text", text)
-                used := hst.MakeLabel("used", 0)
-                entry := {}
-                entry.name := name
-                entry.used := used
-                entry.text := text
-                IniWrite(keyName used newText, iniFile, "Macros", key) ; write the new key and value the ini file
-                sleep 80 ; wait for 80 miliseconds as writes may not finish before the program moves on
+                hst.AddHotstring(key, name, text) ; modifying entries will reset the <used> count.
                 SetHotstrings(key, 1) ; create the hotstrings and make sure they are enabled
-                hotstrings[key] := entry
                 GuiListUpdate()
             }
         }
@@ -335,39 +349,38 @@ GuiEditHotstrings() {
     ; set the input field and the edit box the reflect the current selection
     ; in the list box control
     SetText() {
-		triggerText := gList.GetText(gList.GetNext())
-        editText := hotstrings[triggerText].text
+		key := gList.GetText(gList.GetNext())
+        editText := hst.Text[key]
         gEdit.Text := editText
-        gName.Text := hotstrings[triggerText].name
-        gInput.Text := triggerText
+        gName.Text := hst.Name[key]
+        gInput.Text := key
     }
 
     GuiRemoveHotstrings(deleter) {
         ; get confirmation from the user before continuing
-        confirm := MsgBox("Are you sure you want to delete the hotstring [" deleter "]`nand its resulting text`n" hotstrings[deleter].text, "Confirm", "YN")
+        confirm := MsgBox("Are you sure you want to delete the hotstring [" deleter "]`nand its resulting text`n" hst.Text[deleter], "Confirm", "YN")
         if (confirm = "Yes") {
 			IniDelete(iniFile, "Macros", deleter) ; remove the line from the ini file
 			if (ErrorLevel) { 
 				MsgBox("Cannot write to the file.`nMake sure you are running the program from`na location with proper access rights.")
 			}
 			else {
-				hotstrings.Delete(deleter) ; remove key from assosiative array of hotstring objects
+				hst.macros.Delete(deleter) ; remove key from assosiative array of hotstring objects
 				GuiListUpdate() ; destroy and rebuild relavent guis
 				SetHotstrings(deleter, 0) ; desable matching hotstring with
 			}
         }
-
     }
 }
 
 ; update the list box contents to reflect the new contents of the hotstrings array
 GuiListUpdate() {
     g := [GhotUse, GhotModify]
-    for x in g {
-        l := g[x].Control["hotstringList"]
+    for i, x in g {
+        l := x.Control["hotstringList"]
         l.Opt("-Redraw")
         l.Delete()
-		for k, v in hotstrings {
+		for k, v in hst.macros {
 			l.Add(, k, v.name)
 		}
         l.Opt("+Redraw")
