@@ -19,7 +19,7 @@ if (!FileExist(iniFile)) {
     FileAppend("", iniFile)
 }
 
-global hst := new HotstringTools(iniFile)
+global hst := new HTools(iniFile)
 hst.GetHotstrings("Macros") ; parse the ini file and set the contents of hotstrings to match
 ;global hotstrings := hst.GetHotstrings("Macros") ; parse the ini file and set the contents of hotstrings to match
 
@@ -55,6 +55,9 @@ OpenInsertMenu() {
 	GuiListUpdate()
 }
 
+global imex := new ImportExport()
+imex.show()
+
 Hotstring(":*:dt  ", Format("{1}/{2}/{3} {4}:{5}", A_YYYY, A_MM, A_DD, A_Hour, A_Min))
 
 trayMenu := A_TrayMenu
@@ -67,8 +70,6 @@ TakeBreak(this) {
     this.ToggleCheck("Pause Hotkeys")
 }
 
-imex := new ImportExport()
-
 MakeAllHotstrings() ; starts the main process and creates all the hotstrings from the ini file
 
 ; ========================
@@ -80,14 +81,6 @@ MakeAllHotstrings() {
         SetHotstrings(k)
     }
 }
-
-/*
-GetIniSectionArray(file, header) {
-    sectionEntry := IniRead(file, header) ; get section from ini file
-    sectionList := StrSplit(sectionEntry, "`n") ; split each line of section into array
-    return sectionList ; return the array
-}
-*/
 
 ; takes input string and creates two other versions eg. lol/Lol/LOL
 ; these are used in the different types of key replacements that deal
