@@ -21,7 +21,6 @@ if (!FileExist(iniFile)) {
 
 global hst := new HTools(iniFile)
 hst.GetHotstrings("Macros") ; parse the ini file and set the contents of hotstrings to match
-;global hotstrings := hst.GetHotstrings("Macros") ; parse the ini file and set the contents of hotstrings to match
 
 /*
 for tempk, tempv in hotstrings {
@@ -29,12 +28,13 @@ for tempk, tempv in hotstrings {
 }
 */
 
-SetTimer((*) => CheckIdle(), 5000)
+SetTimer((*) => CheckIdle(), 1000)
 CheckIdle() {
-    if (A_TimeIdlePhysical > 5000) {
+    if (A_TimeIdlePhysical > 1000) {
         hst.SaveModified()
     }
 }
+
 
 global GhotUse := GuiInsertHotstring() ; get object of the gui for hotstring insertion
 global GhotModify := GuiEditHotstrings() ; get object of the gui for hotstring modifcation/addition/deletion
@@ -49,17 +49,19 @@ PopMenu(ByRef item) {
     return
 }
 
+/*
+*/
+imex := new ImportExport()
+imex.show()
 Hotkey("$#h", (*) => GhotUse.Show())
 OpenInsertMenu() {
     GhotUse.Show()
 	GuiListUpdate()
 }
 
-global imex := new ImportExport()
-imex.show()
-
 Hotstring(":*:dt  ", Format("{1}/{2}/{3} {4}:{5}", A_YYYY, A_MM, A_DD, A_Hour, A_Min))
 
+/*
 trayMenu := A_TrayMenu
 trayMenu.Delete()
 trayMenu.Add("Edit Hotstrings", (*) => GhotModify.Show()) ; open modify hotstring dialog
@@ -69,6 +71,7 @@ TakeBreak(this) {
     Suspend()
     this.ToggleCheck("Pause Hotkeys")
 }
+*/
 
 MakeAllHotstrings() ; starts the main process and creates all the hotstrings from the ini file
 
@@ -87,9 +90,9 @@ MakeAllHotstrings() {
 ; with capitalization and the like.
 CasedKeys(sKey) {
     c := [] ; case modified keys
-    c[1] := Format("{1:l}",      sKey) ; format key all lower case
-    c[2] := Format("{1:U}{2:l}", SubStr(sKey, 1, 1), SubStr(sKey, 2)) ; format key senetence case
-    c[3] := Format("{1:U}",      sKey) ; format key all caps
+    c.Push Format("{1:l}",      sKey) ; format key all lower case
+    c.Push Format("{1:U}{2:l}", SubStr(sKey, 1, 1), SubStr(sKey, 2)) ; format key senetence case
+    c.Push Format("{1:U}",      sKey) ; format key all caps
     return c
 }
 
@@ -103,7 +106,7 @@ SetHotstrings(key, stringEnable := 1) {
 }
 
 FormatText(key) {
-    iniText := hst.Text[key] ; hotstrings is global
+    iniText := hst.Text[StrLower(key)] ; hotstrings is global
     if (RegExMatch(key, "^[A-Z][a-z]+$")) {
         out := Format("{1:U}{2}", SubStr(iniText, 1, 1), SubStr(iniText, 2))
     }
@@ -229,10 +232,10 @@ GuiInsertHotstring() {
 		rowText := gList.GetText(rowNum)
         cKeys := CasedKeys(rowText)
         result := Gui.Submit(0)
-        rv := result["radioGroup"]
-        Gui.Control["radioGroup"].Value := 1
+        rv := result.radioGroup
         ClipBoard := FormatText(cKeys[rv])
         WinWaitNotActive("Insert Hotstring")
+        Gui["radioGroup"].Value := 1
         send("^v")
         hst.Used[rowText]++
     }
@@ -322,7 +325,7 @@ GuiEditHotstrings() {
             canWrite := "No"
             MsgBox("You Cannot leave the [New Hotstring] field blank.")
         }
-        else if (hst.macros[key]) { 
+        else if (hst.macros.has(key)) { 
             canWrite := MsgBox("There is already an entry called [" key "]`nWould you like to replace it?", "Overwrite", "YN")
         }
         if (canWrite = "Yes") {
@@ -370,7 +373,7 @@ GuiEditHotstrings() {
 GuiListUpdate() {
     g := [GhotUse, GhotModify]
     for i, x in g {
-        l := x.Control["hotstringList"]
+        l := x["hotstringList"]
         l.Opt("-Redraw")
         l.Delete()
 		for k, v in hst.macros {
