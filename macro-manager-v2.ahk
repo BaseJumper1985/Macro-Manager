@@ -7,7 +7,7 @@
 #SingleInstance ; only one copy of the program is allowed open at a time
 #MaxThreadsPerHotkey 1 ; no re-entrant hotkey handling
 #Include hotstring-tools.ahk
-;#Include hotstring-gui.ahk
+#Include import-export-gui.ahk
 SetWorkingDir A_ScriptDir  ; Ensures a consistent starting directory
 
 ; global variables: Keep this very small and only when it makes good sense.
@@ -50,9 +50,10 @@ PopMenu(ByRef item) {
 }
 
 /*
-*/
 imex := new ImportExport()
 imex.show()
+*/
+
 Hotkey("$#h", (*) => GhotUse.Show())
 OpenInsertMenu() {
     GhotUse.Show()
