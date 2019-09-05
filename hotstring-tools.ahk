@@ -9,6 +9,8 @@ class HTools {
         get => IniRead(%this.__class%.IniFile, "Settings", key)
         set => IniWrite(value, %this.__class%.IniFile, "Settings", key)
     }
+    ; Do not set values using this unless you also set modified := 1
+    ; or the changes will not be passed to the ini file.
     Macros[] {
         get => %this.__class%.HObjects
         set => %this.__class%.HObjects := value

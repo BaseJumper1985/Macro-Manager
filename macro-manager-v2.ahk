@@ -19,6 +19,7 @@ if (!FileExist(iniFile)) {
     FileAppend("", iniFile)
 }
 
+
 global hst := new HTools(iniFile)
 global imex := new ImportExport()
 hst.GetHotstrings("Macros") ; parse the ini file and set the contents of hotstrings to match

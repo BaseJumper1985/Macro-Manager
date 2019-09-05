@@ -1,12 +1,7 @@
 class ImportExport extends HTools {
     imported := Map()
     gui := {} ; import/export GUI
-    lastSelect := 1
-
     __New() {
-    }
-    getC[name] {
-        get => this.guiControls.%name%
     }
     MakeImExGui() {
         g := GuiCreate()
@@ -17,8 +12,7 @@ class ImportExport extends HTools {
         size := format(" w{1} h{2} "
             ,lList.Pos.W, lList.Pos.H)
         input := g.Add("Edit", "ys xs" size, "")
-        leftText := g.Add("Text", "border" size,"")
-        leftText.Name := "leftText"
+        lText := g.Add("Text", "border" size,"")
         input.Name := "input"
         ;text := 
         import := g.Add("Button", "w90 ys", "Import")
@@ -29,12 +23,11 @@ class ImportExport extends HTools {
         transfer := g.Add("Button", "wp", "Transfer")
         rList := g.Add("ListView", "section ys" size, "Trigger|Name")
         rList.Name := "rList"
-        rightText := g.Add("Text", "border" size,"")
-        rightText.Name := "rightText"
+        rText := g.Add("Text", "border" size,"")
 
-        parseIn.OnEvent("Click", (*) => this.ParseLines())
-        import.OnEvent("Click", (*) => this.ImportSelected())
-        lList.OnEvent("ItemFocus", (*) => this.Compare())
+        parseIn.OnEvent("Click", (*) => this.ParseLines(lList, rList, input))
+        import.OnEvent("Click", (*) => this.ImportChecked(lList))
+        lList.OnEvent("ItemFocus", (*) => this.Compare(lList, lText, rList, rText))
         transfer.OnEvent("Click", (*) => this.OldToText())
         g.OnEvent("Close", (*) => this.gui.Destroy())
         this.gui := g
@@ -48,39 +41,35 @@ class ImportExport extends HTools {
         this.gui.show(ops)
         this.FillExport()
     }
-    Hide(ops := "") => this.gui.hide(ops)
-    Compare() {
-        lold := this.gui["rList"]
-        lnew := this.gui["lList"]
-        left := this.gui["leftText"]
-        right := this.gui["rightText"]
-        lkey := lnew.GetText(lnew.GetNext(), 1)
-        newSel := this.imported[lkey].rRow
-        rkey := lold.GetText(newSel, 1)
-        lold.Modify(0, "-Select")
-        lold.Modify(newSel, "+Select Vis")
-        left.Text := this.imported[lkey].text
-        right.Text := this.Text[lkey]
-        
-
+    ImportChecked(lList) {
+        currentRow := 0
+        Loop {
+            currentRow := lList.GetNext(currentRow, "C")
+            if (!currentRow)
+                break
+            key := lList.GetText(currentRow, 1)
+            this.Macros[key] := this.imported[key]
+            /*
+            name := this.imported[key].name
+            text := this.imported[key].text
+            this.AddHotstring(key, name, text)
+            this.Modified[key] := 1
+            */
+        }
     }
-    ParseLines() {
+    Hide(ops := "") => this.gui.hide(ops)
+    ParseLines(lList, rList, input) {
         this.gui["parseIn"].Visible := false
         this.gui["import"].Visible := true
-        rList := this.gui["rList"], lList := this.gui["lList"]
-            , input := this.gui["input"]
         lList.Visible := true ; (hot.Visible = false) ? true : false
         input.Visible := false ; (imp.Visible = true) ? false : true
         this.imported := this.ParseSection(input.text)
         lList.Opt("-Redraw")
-        foundItems := []
         Loop rList.GetCount() {
-            ;found := 0
             count := A_Index
             for k, v in this.imported { 
                 n := this.imported[k]
                 if (k = rList.GetText(count, 1)) { 
-                    ;found := 1
                     n.rRow := count
                 }
                 if (!n.rRow) {
@@ -88,12 +77,36 @@ class ImportExport extends HTools {
                 }
             }
         }
-        for k, v in this.imported
-            lList.Add(, k, v.name)
+        for k, v in this.imported {
+            v.modified := 1 ; these are all potentially new
+            shouldCheck := (v.rRow) ? "" : "check"
+            lList.Add(shouldCheck, k, v.name)
+        }
         lList.Opt("+Redraw")
     }
-    FillExport() {
-        rList := this.gui["rList"]
+    ; return the row index of a row/col value in a ListView object
+    FindIn(list, key, col := 1) {
+        loop list.GetCount() {
+            current := list.GetText(A_Index, col)
+            if (current = key) {
+                return A_Index
+            }
+        }
+        return 0
+    }
+    Compare(lList, lText, rList, rText) {
+        lkey := lList.GetText(lList.GetNext(,"F"), 1)
+        rList.Modify(0, "-Select")
+        foundAt := this.FindIn(rList, lKey)
+        if (foundAt) {
+            rList.Modify(foundAt, "+Select Vis")
+        }
+        lText.Text := this.imported[lkey].text
+        rText.Text := (foundAt) ? this.Text[lkey] : ""
+        
+
+    }
+    FillRList(rList) {
         rList.Opt("-Redraw")
         for k, v in this.macros {
             rList.Add(, k, v.name)
