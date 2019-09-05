@@ -5,6 +5,10 @@ class HTools {
     __New(fileInput) {
         %this.__class%.IniFile := fileInput
     }
+    Setting[key] {
+        get => IniRead(%this.__class%.IniFile, "Settings", key)
+        set => IniWrite(value, %this.__class%.IniFile, "Settings", key)
+    }
     Macros[] {
         get => %this.__class%.HObjects
         set => %this.__class%.HObjects := value
@@ -56,9 +60,9 @@ class HTools {
         }
         return IniArray
     }
-    ParseElements(inText, items) {
+    ParseElements(inText, fields) {
         entry := {}
-        for i, item in items {
+        for i, item in fields {
             reg := RegExMatch(inText, "\{" item ":(?P<" item ">.*?)}(,|$)", matched)
             if (reg) {
                 entry.%item% := matched[item]
@@ -103,7 +107,8 @@ class HTools {
                     notify := 0
                 }
                 v.modified := 0
-                IniWrite(this.MakeIniEntry(k), %this.__class%.IniFile, "Macros", k)
+                newEntry := this.MakeIniEntry(k)
+                IniWrite(newEntry, %this.__class%.IniFile, "Macros", k)
             }
         }
     }

@@ -1,73 +1,103 @@
 class ImportExport extends HTools {
-    imported := map()
-    g := {} ; interface control objects
-    imexgui := {} ; import/export GUI
+    imported := Map()
+    gui := {} ; import/export GUI
+    lastSelect := 1
 
     __New() {
     }
+    getC[name] {
+        get => this.guiControls.%name%
+    }
     MakeImExGui() {
-        gui := GuiCreate()
-        this.g.newHot := gui.Add("ListView", "section checked w400 r12", "Trigger|Name|Match")
-        this.g.newHot.Name := "newHot"
-        this.g.newHot.Visible := false
+        g := GuiCreate()
+        g.SetFont("s12")
+        lList := g.Add("ListView", "section checked w400 r12", "Trigger|Name|Conflict")
+        lList.Visible := false
+        lList.Name := "lList"
         size := format(" w{1} h{2} "
-            ,this.g.newHot.Pos.W,this.g.newHot.Pos.H)
-        this.g.input := gui.Add("Edit", "ys xs" size, "")
-        this.g.import := gui.Add("Button", "w90 xs", "Import")
-        this.g.oldHot := gui.Add("ListView", "section ys" size, "Trigger|Name")
-        this.g.transfer := gui.Add("Button", "xs w90", "Transfer")
-        this.g.oldHot.Name := "oldHot"
+            ,lList.Pos.W, lList.Pos.H)
+        input := g.Add("Edit", "ys xs" size, "")
+        leftText := g.Add("Text", "border" size,"")
+        leftText.Name := "leftText"
+        input.Name := "input"
+        ;text := 
+        import := g.Add("Button", "w90 ys", "Import")
+        import.Visible := false
+        import.Name := "import"
+        parseIn := g.Add("Button", "wp xp yp ", "Parse")
+        parseIn.Name := "parseIn"
+        transfer := g.Add("Button", "wp", "Transfer")
+        rList := g.Add("ListView", "section ys" size, "Trigger|Name")
+        rList.Name := "rList"
+        rightText := g.Add("Text", "border" size,"")
+        rightText.Name := "rightText"
 
-        this.g.import.OnEvent("Click", (*) => this.ParseLines())
-        this.g.newHot.OnEvent("Click", (*) => this.Compare())
-        ;this.g.transfer.OnEvent("Click", (*) => this.OldToNew())
-        gui.OnEvent("Close", (*) => this.imexgui.Destroy())
-        this.imexgui := gui
+        parseIn.OnEvent("Click", (*) => this.ParseLines())
+        import.OnEvent("Click", (*) => this.ImportSelected())
+        lList.OnEvent("ItemFocus", (*) => this.Compare())
+        transfer.OnEvent("Click", (*) => this.OldToText())
+        g.OnEvent("Close", (*) => this.gui.Destroy())
+        this.gui := g
     }
     Recreate() {
-        this.imexgui.Destroy()
+        this.gui.Destroy()
         this.MakeImExGui()
     }
     Show(ops := "") {
         this.MakeImExGui()
-        this.imexgui.show(ops)
+        this.gui.show(ops)
         this.FillExport()
     }
-    Hide(ops := "") => this.imexgui.hide(ops)
+    Hide(ops := "") => this.gui.hide(ops)
     Compare() {
-        lold := this.g.oldHot
-        lnew := this.g.newHot
-        newSel := lnew.GetText(lnew.GetNext(), 3)
-        lold.Modify(newSel, "+Select")
+        lold := this.gui["rList"]
+        lnew := this.gui["lList"]
+        left := this.gui["leftText"]
+        right := this.gui["rightText"]
+        lkey := lnew.GetText(lnew.GetNext(), 1)
+        newSel := this.imported[lkey].rRow
+        rkey := lold.GetText(newSel, 1)
+        lold.Modify(0, "-Select")
+        lold.Modify(newSel, "+Select Vis")
+        left.Text := this.imported[lkey].text
+        right.Text := this.Text[lkey]
+        
 
     }
     ParseLines() {
-        oldHot := this.g.oldHot, newHot := this.g.newHot, input := this.g.input
-        newHot.Visible := true ; (hot.Visible = false) ? true : false
+        this.gui["parseIn"].Visible := false
+        this.gui["import"].Visible := true
+        rList := this.gui["rList"], lList := this.gui["lList"]
+            , input := this.gui["input"]
+        lList.Visible := true ; (hot.Visible = false) ? true : false
         input.Visible := false ; (imp.Visible = true) ? false : true
         this.imported := this.ParseSection(input.text)
-        newHot.Opt("-Redraw")
+        lList.Opt("-Redraw")
         foundItems := []
-        Loop oldHot.GetCount() {
+        Loop rList.GetCount() {
             ;found := 0
             count := A_Index
             for k, v in this.imported { 
-                if (k = oldHot.GetText(count)) { 
+                n := this.imported[k]
+                if (k = rList.GetText(count, 1)) { 
                     ;found := 1
-                    foundItems.Push(count)
+                    n.rRow := count
+                }
+                if (!n.rRow) {
+                    n.rRow := 0
                 }
             }
         }
         for k, v in this.imported
-            newHot.Add(, k, v.name, foundItems[A_Index])
-        newHot.Opt("+Redraw")
+            lList.Add(, k, v.name)
+        lList.Opt("+Redraw")
     }
     FillExport() {
-        oldHot := this.imexgui["oldHot"]
-        oldHot.Opt("-Redraw")
+        rList := this.gui["rList"]
+        rList.Opt("-Redraw")
         for k, v in this.macros {
-            oldHot.Add(, k, v.name)
+            rList.Add(, k, v.name)
         }
-        oldHot.Opt("+Redraw")
+        rList.Opt("+Redraw")
     }
 }

@@ -20,10 +20,11 @@ if (!FileExist(iniFile)) {
 }
 
 global hst := new HTools(iniFile)
+global imex := new ImportExport()
 hst.GetHotstrings("Macros") ; parse the ini file and set the contents of hotstrings to match
 
 /*
-for tempk, tempv in hotstrings {
+for tempk, tempv in hst.macros {
     IniWrite(hst.MakeIniEntry(tempk), iniFile, "Macros", tempk) ; write the new key and value the ini file
 }
 */
@@ -43,15 +44,17 @@ fMenu := MenuCreate() ; create the right click menu for use with the prograMS gu
 fMenu.Add("Insert Hotstring Here.", (*) => OpenInsertMenu()) ; open insert hotstring dialog
 fMenu.Add("Convert Text", (*) => ParseSelection()) ; open parse text and replace with hotsting results dialog
 fMenu.Add("Edit Hotstrings", (*) => GhotModify.Show()) ; open modify hotstring dialog
+fMenu.Add("Import/Export", (*) => ShowImEx()) ; open import/export window
 Hotkey("#RButton", (*) => fMenu.Show()) ; assign control + right mouse button to open a small popup manu
 PopMenu(ByRef item) {
     item.Show()
     return
 }
 
+ShowImEx() {
+    imex.show()
+}
 /*
-imex := new ImportExport()
-imex.show()
 */
 
 Hotkey("$#h", (*) => GhotUse.Show())
@@ -104,6 +107,10 @@ SetHotstrings(key, stringEnable := 1) {
         Hotstring(":CX:" x " ", (*) => PasteText(A_ThisHotkey), stringEnable)
     }
     return
+}
+
+GetSetting(key) {
+    return IniRead(HTools.IniFile, "Settings", key)
 }
 
 FormatText(key) {
