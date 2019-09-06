@@ -8,6 +8,9 @@
 #MaxThreadsPerHotkey 1 ; no re-entrant hotkey handling
 #Include hotstring-tools.ahk
 #Include import-export-gui.ahk
+#Include dynamic-hotstrings.ahk
+;#include edit-hotstrings
+;#include place-hotstrings
 SetWorkingDir A_ScriptDir  ; Ensures a consistent starting directory
 
 ; global variables: Keep this very small and only when it makes good sense.
@@ -22,7 +25,8 @@ if (!FileExist(iniFile)) {
 
 global hst := new HTools(iniFile)
 global imex := new ImportExport()
-hst.GetHotstrings("Macros") ; parse the ini file and set the contents of hotstrings to match
+global dyhot := new DynamicHotstrings()
+dyhot.show()
 
 /*
 for tempk, tempv in hst.macros {
@@ -78,65 +82,14 @@ TakeBreak(this) {
 }
 */
 
-MakeAllHotstrings() ; starts the main process and creates all the hotstrings from the ini file
-
-; ========================
-; Make All Hotstrings
-; ========================
-MakeAllHotstrings() {
-    ; Create all the HotStrings and make a key lookup for other tasks.
-    for k in hst.macros {
-        SetHotstrings(k)
-    }
-}
-
-; takes input string and creates two other versions eg. lol/Lol/LOL
-; these are used in the different types of key replacements that deal
-; with capitalization and the like.
-CasedKeys(sKey) {
-    c := [] ; case modified keys
-    c.Push Format("{1:l}",      sKey) ; format key all lower case
-    c.Push Format("{1:U}{2:l}", SubStr(sKey, 1, 1), SubStr(sKey, 2)) ; format key senetence case
-    c.Push Format("{1:U}",      sKey) ; format key all caps
-    return c
-}
-
-; set hotstring from a given list of cased keys
-SetHotstrings(key, stringEnable := 1) {
-    cKeys := CasedKeys(key)
-    for i, x in cKeys {
-        Hotstring(":CX:" x " ", (*) => PasteText(A_ThisHotkey), stringEnable)
-    }
-    return
-}
-
 GetSetting(key) {
     return IniRead(HTools.IniFile, "Settings", key)
 }
 
-FormatText(key) {
-    iniText := hst.Text[StrLower(key)] ; hotstrings is global
-    if (RegExMatch(key, "^[A-Z][a-z]+$")) {
-        out := Format("{1:U}{2}", SubStr(iniText, 1, 1), SubStr(iniText, 2))
-    }
-    else if (RegExMatch(key, "^[A-Z]+$")) {
-        out := Format("{1:t}", iniText)    
-    }
-    else {
-        out := Format("{1}", iniText)
-    }
-    return out
-}
 
-PasteText(hKey) {
-    key := Trim(RegExReplace(hKey, "^:\w*:"))
-    out := FormatText(key)
-    Clipboard := out
-    sleep(50)
-    Send("^v")
-    hst.Used[key]++
-    return
-}
+; ========================
+; Make All Hotstrings
+; ========================
 
 ParseSelection(*) {
     result := MsgBox("First select the text you want to modify then click Ok", "Convert Selection", "OC " 262144)
@@ -239,10 +192,10 @@ GuiInsertHotstring() {
         Gui.Hide()
 		rowNum := gList.GetNext()
 		rowText := gList.GetText(rowNum)
-        cKeys := CasedKeys(rowText)
+        cKeys := hst.CasedKeys(rowText)
         result := Gui.Submit(0)
         rv := result.radioGroup
-        ClipBoard := FormatText(cKeys[rv])
+        ClipBoard := hst.FormatText(cKeys[rv])
         WinWaitNotActive("Insert Hotstring")
         Gui["radioGroup"].Value := 1
         send("^v")
@@ -345,7 +298,7 @@ GuiEditHotstrings() {
             else {
                 key := StrLower(key)
                 hst.AddHotstring(key, name, text) ; modifying entries will reset the <used> count.
-                SetHotstrings(key, 1) ; create the hotstrings and make sure they are enabled
+                hst.SetHotstring(key, 1) ; create the hotstrings and make sure they are enabled
                 GuiListUpdate()
             }
         }
@@ -372,7 +325,7 @@ GuiEditHotstrings() {
 			else {
 				hst.macros.Delete(deleter) ; remove key from assosiative array of hotstring objects
 				GuiListUpdate() ; destroy and rebuild relavent guis
-				SetHotstrings(deleter, 0) ; desable matching hotstring with
+				hst.SetHotstring(deleter, 0) ; desable matching hotstring with
 			}
         }
     }

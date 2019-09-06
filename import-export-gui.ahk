@@ -6,7 +6,7 @@ class ImportExport extends HTools {
     MakeImExGui() {
         g := GuiCreate()
         g.SetFont("s12")
-        lList := g.Add("ListView", "section checked w400 r12", "Trigger|Name|Conflict")
+        lList := g.Add("ListView", "section checked w400 r12", "Trigger|Name")
         lList.Visible := false
         lList.Name := "lList"
         size := format(" w{1} h{2} "
@@ -20,7 +20,11 @@ class ImportExport extends HTools {
         import.Name := "import"
         parseIn := g.Add("Button", "wp xp yp ", "Parse")
         parseIn.Name := "parseIn"
-        transfer := g.Add("Button", "wp", "Transfer")
+        clip := g.Add("Button", "wp", "Copy")
+        clip.Visible := false
+        clip.Name := "clip"
+        export := g.Add("Button", "wp xp yp", "Export")
+        export.Name := "export"
         rList := g.Add("ListView", "section ys" size, "Trigger|Name")
         rList.Name := "rList"
         rText := g.Add("Text", "border" size,"")
@@ -28,7 +32,8 @@ class ImportExport extends HTools {
         parseIn.OnEvent("Click", (*) => this.ParseLines(lList, rList, input))
         import.OnEvent("Click", (*) => this.ImportChecked(lList))
         lList.OnEvent("ItemFocus", (*) => this.Compare(lList, lText, rList, rText))
-        transfer.OnEvent("Click", (*) => this.OldToText())
+        clip.OnEvent("Click", (*) => this.CopyToClipboard(input))
+        export.OnEvent("Click", (*) => this.ExportRList(rList, input))
         g.OnEvent("Close", (*) => this.gui.Destroy())
         this.gui := g
     }
@@ -39,7 +44,24 @@ class ImportExport extends HTools {
     Show(ops := "") {
         this.MakeImExGui()
         this.gui.show(ops)
-        this.FillExport()
+        this.FillRList()
+    }
+    ExportRList(rList, input) {
+        export := this.Gui["export"].Visible := false
+        clip := this.Gui["clip"].Visible := true
+        out := ""
+        Loop rList.GetCount() {
+            key := rList.GetText(A_Index, 1)
+            line := key "=" this.MakeIniEntry(key) "`r`n"
+            out .= line
+        }
+        input.Text := out
+    }
+    CopyToClipboard(input) {
+        input.Focus()
+        Send("^a")
+        Send("^c")
+        MsgBox("Contents copied to clipboard")
     }
     ImportChecked(lList) {
         currentRow := 0
@@ -49,12 +71,7 @@ class ImportExport extends HTools {
                 break
             key := lList.GetText(currentRow, 1)
             this.Macros[key] := this.imported[key]
-            /*
-            name := this.imported[key].name
-            text := this.imported[key].text
-            this.AddHotstring(key, name, text)
-            this.Modified[key] := 1
-            */
+            this.SetHotstring(key)
         }
     }
     Hide(ops := "") => this.gui.hide(ops)
@@ -82,6 +99,7 @@ class ImportExport extends HTools {
             shouldCheck := (v.rRow) ? "" : "check"
             lList.Add(shouldCheck, k, v.name)
         }
+        lList.ModifyCol()
         lList.Opt("+Redraw")
     }
     ; return the row index of a row/col value in a ListView object
@@ -106,7 +124,8 @@ class ImportExport extends HTools {
         
 
     }
-    FillRList(rList) {
+    FillRList() {
+        rList := this.Gui["rList"]
         rList.Opt("-Redraw")
         for k, v in this.macros {
             rList.Add(, k, v.name)
