@@ -1,98 +1,199 @@
 class HTools {
     static IniFile := ""
-    static macros := {}
-    static Fields := ["name", "used", "text"]
+    static IniEntries := map()
+    Fields := ["name", "used", "text"]
     __New(fileInput) {
-        %this.__Class%.IniFile := fileInput
+        %this.__class%.IniFile := fileInput
+        this.GetEntries("Macros")
+        this.MakeAllHotstrings()
+    }
+    Setting[key] {
+        get => IniRead(%this.__class%.IniFile, "Settings", key)
+        set => IniWrite(value, %this.__class%.IniFile, "Settings", key)
+    }
+    ; Do not set values using this unless you also set modified := 1
+    ; or the changes will not be passed to the ini file.
+    Macros[] {
+        get => %this.__class%.IniEntries
+        set => %this.__class%.IniEntries := value
     }
     Modified[key] {
-        get => %this.__Class%.macros[key].modified
+        get => %this.__class%.IniEntries[key].modified
         set {
-            %this.__Class%.macros[key].modified := value
+            %this.__class%.IniEntries[key].modified := value
         }
     }
     Used[key] {
-        get => %this.__Class%.macros[key].used
+        get => %this.__class%.IniEntries[key].used
         set {
-            %this.__Class%.macros[key].used := value
+            %this.__class%.IniEntries[key].used := value
             this.Modified[key] := 1
         }
     }
     Text[key] {
-        get => %this.__Class%.macros[key].text
+        get => %this.__class%.IniEntries[key].text
         set {
-            %this.__Class%.macros[key].text := value
+            %this.__class%.IniEntries[key].text := value
             this.Modified[key] := 1
         }
     }
     Name[key] {
-        get => %this.__Class%.macros[key].name
+        get => %this.__class%.IniEntries[key].name
         set {
-            %this.__Class%.macros[key].name := value
+            %this.__class%.IniEntries[key].name := value
             this.Modified[key] := 1
         }
     }
-    GetHotstrings(header) {
-        tempArray := this.GetIniSectionArray(header)
+
+    GetEntries(header) {
+        tempArray := this.GetIniSection(header)
         tempEntries := this.ParseSection(tempArray)
-        %this.__Class%.macros := tempEntries
+        this.Macros := tempEntries
         return tempEntries
     }
-    ParseSection(SectionArray) { 
-        IniArray := {}
-        for k, v in SectionArray {
-            entry := {}
-            splitKey := StrSplit(v, "=")
-            key := splitkey[1]
-            text := splitkey[2]
-            ; extract the name of the ini listing if present
-            entry := this.ParseElements(text, this.Fields)
-            entry.modified := 0
-            entry.text := RegExReplace(entry.text, "i)\\eol", "`r`n")
-            ;MsgBox("item: [" entry.name "] was used " entry.used " times")
-            IniArray[key] := entry
+
+    MakeAllHotstrings() {
+        ; Create all the HotStrings and make a key lookup for other tasks.
+        for k in this.Macros {
+            this.SetHotstring(k)
+        }
+    }
+    ; takes input string and creates two other versions eg. lol/Lol/LOL
+    ; these are used in the different types of key replacements that deal
+    ; with capitalization and the like.
+    CasedKeys(sKey) {
+        c := [] ; case modified keys
+        c.Push Format("{1:l}",      sKey) ; format key all lower case
+        c.Push Format("{1:U}{2:l}", SubStr(sKey, 1, 1), SubStr(sKey, 2)) ; format key senetence case
+        c.Push Format("{1:U}",      sKey) ; format key all caps
+        return c
+    }
+
+    ; set hotstring from a given list of cased keys
+    SetHotstring(key, stringEnable := 1) {
+        cKeys := this.CasedKeys(key)
+        for i, x in cKeys {
+            Hotstring(":CX:" x " ", (*) => this.PasteText(A_ThisHotkey), stringEnable)
+        }
+    }
+
+    PasteText(hKey) {
+        key := Trim(RegExReplace(hKey, "^:\w*:"))
+        out := this.FormatText(key)
+        Clipboard := out
+        sleep(50)
+        Send("^v")
+        this.Used[StrLower(key)]++
+        return
+    }
+
+    FormatText(key) {
+        iniText := this.Text[StrLower(key)] ; hotstrings is global
+        if (RegExMatch(key, "^[A-Z][a-z]+$")) {
+            out := Format("{1:U}{2}", SubStr(iniText, 1, 1), SubStr(iniText, 2))
+        }
+        else if (RegExMatch(key, "^[A-Z]+$")) {
+            out := Format("{1:t}", iniText)
+        }
+        else {
+            out := Format("{1}", iniText)
+        }
+        return out
+    }
+
+    ParseSection(section) { 
+        IniArray := map()
+        sectionArray := StrSplit(section, "`n") ; split each line of section into array
+        for k, v in sectionArray {
+            if (v != "") {
+                splitKey := StrSplit(v, "=")
+                key := splitkey[1]
+                text := splitkey[2]
+                ; extract the name of the ini listing if present
+                IniArray[key] := this.ParseElements(text, this.Fields)
+            }
         }
         return IniArray
     }
-    ParseElements(inText, items) {
+
+    ParseElements(inText, fields) {
+        ; quote character for use in regex
         entry := {}
-        for i, item in items {
-            reg := RegExMatch(inText, "\{" item ":(?P<" item ">.*?)}(,|$)", matched)
-            if (reg) {
-                entry.%item% := matched[item]
-            }
+        for i, item in fields {
+            reg := RegExMatch(inText, "\{" item ":(?P<" item ">.*?[^\\])}", matched)
+            entry.%item% := (reg) ? matched[item] : ""
         }
+        entry.modified := 0
+        entry.text := this.Stringify(entry.text, 0)
         return entry
     }
+
     AddHotstring(key, name, text) {
         entry := {}
         entry.used := 0
         entry.modified := 1
         entry.name := name
         entry.text := text
-        %this.__Class%.macros[key] := entry
+        this.Macros[key] := entry
     }
-    GetIniSectionArray(header) {
-        sectionEntry := IniRead(this.IniFile, header) ; get section from ini file
-        sectionList := StrSplit(sectionEntry, "`n") ; split each line of section into array
-        return sectionList ; return the array
+
+    Stringify(string, set := 1) {
+        escapes := "
+        (
+            ([``]
+            |\\
+            |\{
+            |})
+        )"
+        if (set) {
+            string := RegExReplace(string, "Simx)" escapes, "\$1")
+            string := RegExReplace(string, "\R", "\R")
+        }
+        else {
+            string := RegExReplace(string, "Simx)" "([\\])" escapes, "$2")
+            string := RegExReplace(string, "\\R", "`r`n")
+        }
+        return string
     }
+
+
+    GetIniSection(header) {
+        ; get section from ini file and return the text from the ini section
+        return IniRead(%this.__class%.IniFile, header)
+    }
+
     MakeIniEntry(key) {
         out := ""
         for k, label in this.Fields {
-            out .= this.MakeLabel(label, %this.__Class%.macros[key].%label%)
-            if (k < this.Fields.Length())
-                out .= ","
+            out .= this.MakeLabel(label, this.Macros[key].%label%)
         }
         return out
     }
+
     MakeLabel(label, content) {
-        out := RegExReplace(content, "\R", "\eol")
+        out := this.Stringify(content)
         out := "{" label ":" out "}"
         return out
     }
+
+    ParseSelection(*) {
+        result := MsgBox("First select the text you want to modify then click Ok", "Convert Selection", "OC " 262144)
+        if (result = "Ok") {
+            Send("^c")
+            Sleep(250)
+            Modify := Clipboard
+            Sleep(250)
+            for k, v in this.Macros { ; hotstrings is global
+                Modify := RegExReplace(Modify, "i)\b" k "\b", v.text)
+            }
+            Clipboard := Modify
+            Sleep(250)
+            SendInput("^v")
+        }
+    }
+
     SaveModified() {
-        for k, v in %this.__Class%.macros {
+        for k, v in this.Macros {
             notify := 0
             if (v.modified = 1) {
                 if (notify) {
@@ -100,69 +201,10 @@ class HTools {
                     notify := 0
                 }
                 v.modified := 0
-                IniWrite(hst.MakeIniEntry(k), this.IniFile, "Macros", k)
+                newEntry := this.MakeIniEntry(k)
+                IniWrite(newEntry, %this.__class%.IniFile, "Macros", k)
             }
         }
     }
-}
 
-class ImportExport extends HTools {
-    imexgui := {} ; import/export GUI
-    __New() {
-        this.MakeImExGui()
-    }
-    MakeImExGui() {
-        gui := GuiCreate()
-        newHot := gui.Add("ListView", "section checked w400 r12", "Trigger|Name")
-        newHot.Name := "newHot"
-        newHot.Visible := false
-        size := format(" w{1} h{2} ",newHot.Pos.W,newHot.Pos.H)
-        input := gui.Add("Edit", "ys xs" size, "")
-        import := gui.Add("Button", "w90 xs", "Toggle")
-        oldHot := gui.Add("ListView", "section ys" size, "Trigger|Name")
-        transfer := gui.Add("Button", "xs w90", "Transfer")
-        oldHot.Name := "oldHot"
-
-        import.OnEvent("Click", (*) => this.ParseLines(newHot, input))
-        transfer.OnEvent("Click", (*) => this.OldToNew())
-        gui.OnEvent("Close", (*) => this.Close())
-        this.imexgui := gui
-    }
-    Show(ops := "") {
-        this.imexgui.show(ops)
-        this.FillExport()
-    }
-    Hide(ops := "") => this.imexgui.hide(ops)
-    Close() {
-        this.imexgui.Destroy()
-        this.MakeImExGui()
-    }
-    ParseLines(hot, imp) {
-        hot.Visible := (hot.Visible = false) ? true : false
-        imp.Visible := (imp.Visible = true) ? false : true
-    }
-    OldToNew() {
-        oldHot := this.imexgui.Control["oldHot"]
-        newHot := this.imexgui.Control["newHot"]
-        rowNum := 0
-        Loop {
-            rowNum := oldHot.GetNext(RowNum)
-            if (!rowNum) {
-                newHot.ModifyCol()
-                break
-            }
-            one := oldHot.GetText(RowNum, 1)
-            two := oldHot.GetText(RowNum, 2)
-            newHot.Add(,one,two)
-        }
-    }
-    FillExport() {
-        oldHot := this.imexgui.Control["oldHot"]
-        oldHot.Opt("-Redraw")
-        for k, v in %base.__Class%.macros {
-            oldHot.Add(, k, v.name)
-        }
-        oldHot.ModifyCol()
-        oldHot.Opt("+Redraw")
-    }
 }
