@@ -1,4 +1,9 @@
-string := "{This} is {SOME} text. {All} the {WORDS} {All} {All} {All} {All} {All} in {SOME} brackets {should} be {WORDS} the {ONLY} things {FOUND}"
+string := "
+    (
+        some odd ` symbols {such} as " and \ and the like
+        as well as some new lines
+        just to mix things up.
+    )"
 pos := 0
 matches := [], hash := map()
 Loop {
@@ -31,4 +36,28 @@ Extract(gui, matches, out) {
     msgbox(Format(out, values*))
 }
 
-Gui.Show()
+Stringify(string, set := 1) {
+    escapes := "
+    (
+        ([``]
+        |["]
+        |\\
+        |\{
+        |})
+    )"
+    if (set) {
+        string := RegExReplace(string, "Simx)" escapes, "\$1")
+        string := RegExReplace(string, "\R", "\R")
+    }
+    else {
+        string := RegExReplace(string, "Simx)" "([\\])" escapes, "$2")
+        string := RegExReplace(string, "\\R", "`r`n")
+    }
+    return string
+}
+
+newstring := (Stringify(string))
+msgbox(newstring)
+msgbox(Stringify(newstring, 0))
+
+;Gui.Show()

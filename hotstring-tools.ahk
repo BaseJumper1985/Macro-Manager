@@ -1,10 +1,10 @@
 class HTools {
     static IniFile := ""
-    static HObjects := map()
+    static IniEntries := map()
     Fields := ["name", "used", "text"]
     __New(fileInput) {
         %this.__class%.IniFile := fileInput
-        this.GetHotstrings("Macros")
+        this.GetEntries("Macros")
         this.MakeAllHotstrings()
     }
     Setting[key] {
@@ -14,38 +14,38 @@ class HTools {
     ; Do not set values using this unless you also set modified := 1
     ; or the changes will not be passed to the ini file.
     Macros[] {
-        get => %this.__class%.HObjects
-        set => %this.__class%.HObjects := value
+        get => %this.__class%.IniEntries
+        set => %this.__class%.IniEntries := value
     }
     Modified[key] {
-        get => %this.__class%.HObjects[key].modified
+        get => %this.__class%.IniEntries[key].modified
         set {
-            %this.__class%.HObjects[key].modified := value
+            %this.__class%.IniEntries[key].modified := value
         }
     }
     Used[key] {
-        get => %this.__class%.HObjects[key].used
+        get => %this.__class%.IniEntries[key].used
         set {
-            %this.__class%.HObjects[key].used := value
+            %this.__class%.IniEntries[key].used := value
             this.Modified[key] := 1
         }
     }
     Text[key] {
-        get => %this.__class%.HObjects[key].text
+        get => %this.__class%.IniEntries[key].text
         set {
-            %this.__class%.HObjects[key].text := value
+            %this.__class%.IniEntries[key].text := value
             this.Modified[key] := 1
         }
     }
     Name[key] {
-        get => %this.__class%.HObjects[key].name
+        get => %this.__class%.IniEntries[key].name
         set {
-            %this.__class%.HObjects[key].name := value
+            %this.__class%.IniEntries[key].name := value
             this.Modified[key] := 1
         }
     }
 
-    GetHotstrings(header) {
+    GetEntries(header) {
         tempArray := this.GetIniSection(header)
         tempEntries := this.ParseSection(tempArray)
         this.Macros := tempEntries
@@ -83,7 +83,7 @@ class HTools {
         Clipboard := out
         sleep(50)
         Send("^v")
-        this.Used[key]++
+        this.Used[StrLower(key)]++
         return
     }
 
@@ -93,7 +93,7 @@ class HTools {
             out := Format("{1:U}{2}", SubStr(iniText, 1, 1), SubStr(iniText, 2))
         }
         else if (RegExMatch(key, "^[A-Z]+$")) {
-            out := Format("{1:t}", iniText)    
+            out := Format("{1:t}", iniText)
         }
         else {
             out := Format("{1}", iniText)
@@ -117,15 +117,14 @@ class HTools {
     }
 
     ParseElements(inText, fields) {
+        ; quote character for use in regex
         entry := {}
         for i, item in fields {
-            reg := RegExMatch(inText, "\{" item ":(?P<" item ">.*?)}(,|$)", matched)
-            if (reg) {
-                entry.%item% := matched[item]
-            }
+            reg := RegExMatch(inText, "\{" item ":(?P<" item ">.*?[^\\])}", matched)
+            entry.%item% := (reg) ? matched[item] : ""
         }
         entry.modified := 0
-        entry.text := RegExReplace(entry.text, "i)\\eol", "`r`n")
+        entry.text := this.Stringify(entry.text, 0)
         return entry
     }
 
@@ -138,6 +137,26 @@ class HTools {
         this.Macros[key] := entry
     }
 
+    Stringify(string, set := 1) {
+        escapes := "
+        (
+            ([``]
+            |\\
+            |\{
+            |})
+        )"
+        if (set) {
+            string := RegExReplace(string, "Simx)" escapes, "\$1")
+            string := RegExReplace(string, "\R", "\R")
+        }
+        else {
+            string := RegExReplace(string, "Simx)" "([\\])" escapes, "$2")
+            string := RegExReplace(string, "\\R", "`r`n")
+        }
+        return string
+    }
+
+
     GetIniSection(header) {
         ; get section from ini file and return the text from the ini section
         return IniRead(%this.__class%.IniFile, header)
@@ -147,14 +166,12 @@ class HTools {
         out := ""
         for k, label in this.Fields {
             out .= this.MakeLabel(label, this.Macros[key].%label%)
-            if (k < this.Fields.Length)
-                out .= ","
         }
         return out
     }
 
     MakeLabel(label, content) {
-        out := RegExReplace(content, "\R", "\eol")
+        out := this.Stringify(content)
         out := "{" label ":" out "}"
         return out
     }
