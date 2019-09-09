@@ -1,7 +1,10 @@
+#Include import-export-gui.ahk
+#include gui-interfaces.ahk
+
 class HTools {
     static IniFile := ""
     static IniEntries := map()
-    Fields := ["name", "used", "text"]
+    Fields := ["name", "type", "used", "text"]
     __New(fileInput) {
         %this.__class%.IniFile := fileInput
         this.GetEntries("Macros")
@@ -54,51 +57,40 @@ class HTools {
 
     MakeAllHotstrings() {
         ; Create all the HotStrings and make a key lookup for other tasks.
-        for k in this.Macros {
+        for k, v in this.Macros {
             this.SetHotstring(k)
         }
-    }
-    ; takes input string and creates two other versions eg. lol/Lol/LOL
-    ; these are used in the different types of key replacements that deal
-    ; with capitalization and the like.
-    CasedKeys(sKey) {
-        c := [] ; case modified keys
-        c.Push Format("{1:l}",      sKey) ; format key all lower case
-        c.Push Format("{1:U}{2:l}", SubStr(sKey, 1, 1), SubStr(sKey, 2)) ; format key senetence case
-        c.Push Format("{1:U}",      sKey) ; format key all caps
-        return c
     }
 
     ; set hotstring from a given list of cased keys
     SetHotstring(key, stringEnable := 1) {
-        cKeys := this.CasedKeys(key)
-        for i, x in cKeys {
-            Hotstring(":CX:" x " ", (*) => this.PasteText(A_ThisHotkey), stringEnable)
+        Hotstring(":CX:" key " ", (*) => this.OutputType(A_ThisHotkey), stringEnable)
+    }
+
+    OutputType(key) {
+        key := Trim(RegExReplace(key, "^:\w*:"))
+        ;MsgBox(key)
+        if (this.Macros[key].type = "Dynamic") {
+            this.DynamicOut(key)
+        }
+        else {
+            this.PasteText(key)
         }
     }
 
-    PasteText(hKey) {
-        key := Trim(RegExReplace(hKey, "^:\w*:"))
-        out := this.FormatText(key)
+    DynamicOut(key) {
+        this.dynamic := ""
+        this.dynamic := new DynamicHotstring(key, this.Text[key])
+        this.dynamic.show()
+    }
+
+    PasteText(key, alt := "") {
+        out := (alt) ? alt : this.Text[key]
         Clipboard := out
         sleep(50)
         Send("^v")
         this.Used[StrLower(key)]++
         return
-    }
-
-    FormatText(key) {
-        iniText := this.Text[StrLower(key)] ; hotstrings is global
-        if (RegExMatch(key, "^[A-Z][a-z]+$")) {
-            out := Format("{1:U}{2}", SubStr(iniText, 1, 1), SubStr(iniText, 2))
-        }
-        else if (RegExMatch(key, "^[A-Z]+$")) {
-            out := Format("{1:t}", iniText)
-        }
-        else {
-            out := Format("{1}", iniText)
-        }
-        return out
     }
 
     ParseSection(section) { 
@@ -128,11 +120,12 @@ class HTools {
         return entry
     }
 
-    AddHotstring(key, name, text) {
+    AddEntry(key, type, name, text) {
         entry := {}
+        entry.name := name
+        entry.type := type
         entry.used := 0
         entry.modified := 1
-        entry.name := name
         entry.text := text
         this.Macros[key] := entry
     }
@@ -208,3 +201,31 @@ class HTools {
     }
 
 }
+
+/*
+    ; takes input string and creates two other versions eg. lol/Lol/LOL
+    ; these are used in the different types of key replacements that deal
+    ; with capitalization and the like.
+    CasedKeys(sKey) {
+        c := [] ; case modified keys
+        c.Push Format("{1:l}",      sKey) ; format key all lower case
+        c.Push Format("{1:U}{2:l}", SubStr(sKey, 1, 1), SubStr(sKey, 2)) ; format key senetence case
+        c.Push Format("{1:U}",      sKey) ; format key all caps
+        return c
+    }
+*/
+/*
+    FormatText(key) {
+        iniText := this.Text[StrLower(key)] ; hotstrings is global
+        if (RegExMatch(key, "^[A-Z][a-z]+$")) {
+            out := Format("{1:U}{2}", SubStr(iniText, 1, 1), SubStr(iniText, 2))
+        }
+        else if (RegExMatch(key, "^[A-Z]+$")) {
+            out := Format("{1:t}", iniText)
+        }
+        else {
+            out := Format("{1}", iniText)
+        }
+        return out
+    }
+*/
