@@ -1,22 +1,28 @@
 # Macro-Manager
+
 A program in AutoHotKey v2 for the creation and management of dynamic macros and Hotstrings
 
-### Description
+## Description
+
 Create and manage Hotstrings using a simple user interface. Hotstring triggers are unambiguous requiring input of a **Double-Space** (*or space + punctuation*) to trigger. Thus eliminating the problem many other programs share of accidental triggers.
 
 Hotstrings can also be entered via **GUI** with a simple search system supporting fuzzy searching and selection casing (*normal/sentence/title*).
 
 You can also select blocks of text and this program can parse it for all known hotstrings and replace them with the correct text.
 
-### Issue Reporting
+## Issue Reporting
+
 Please let me know of any bugs you encounter. In addition, if you have any ideas/additions to the program you would like to see, please post an issue about it. I am always looking for ways to make this as simple, fast, intuitive, and useful as possible.
 
-### Installation
+## Installation
+
 1. Place `BAD-Hotstrings.exe` into a folder of your choice.
 1. Run the program by double-clicking.
 
-### Basic Usage
-#### Hotstring Editing
+## Basic Usage
+
+### Hotstring Editing
+
 - To create a new Hotstring:
     1. Run `BAD Hotstrings.exe` then right-click the tray icon that appears.
     1. Select **Edit Hotstrings** from the popup menu list to open the *Hotstring Editor*.
@@ -30,7 +36,9 @@ Please let me know of any bugs you encounter. In addition, if you have any ideas
 - To Edit a Hotstring:
     1. Select the Hotstring from the **List Box** and simply edit the resulting text.
     1. Once you are happy with the result click the **Apply** button and the effect will become active immediately.
-#### Hotstring Entry
+
+### Hotstring Entry
+
 - Entering Hotstrings:
     1. Once you have created some Hotstrings you can begin using them by typing the Hotstring then pressing the **Space Bar** twice. This will erase the Hotstring (*including the two spaces*) and replace it with the matching text for that Hotstring.
 - Formatting output:

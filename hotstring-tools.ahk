@@ -26,6 +26,13 @@ class HTools {
             %this.__class%.IniEntries[key].modified := value
         }
     }
+    Type[key] {
+        get => %this.__class%.IniEntries[key].type
+        set {
+            %this.__class%.IniEntries[key].type := value
+            this.Modified[key] := 1
+        }
+    }
     Used[key] {
         get => %this.__class%.IniEntries[key].used
         set {
@@ -64,11 +71,11 @@ class HTools {
 
     ; set hotstring from a given list of cased keys
     SetHotstring(key, stringEnable := 1) {
-        Hotstring(":CX:" key " ", (*) => this.OutputType(A_ThisHotkey), stringEnable)
+        Hotstring(":*CX:" key "  ", (*) => this.OutputType(A_ThisHotkey), stringEnable)
     }
 
     OutputType(key) {
-        key := Trim(RegExReplace(key, "^:\w*:"))
+        key := Trim(RegExReplace(key, "^:.+?:"))
         ;MsgBox(key)
         if (this.Macros[key].type = "Dynamic") {
             this.DynamicOut(key)
@@ -102,16 +109,16 @@ class HTools {
                 key := splitkey[1]
                 text := splitkey[2]
                 ; extract the name of the ini listing if present
-                IniArray[key] := this.ParseElements(text, this.Fields)
+                IniArray[key] := this.ParseElements(text)
             }
         }
         return IniArray
     }
 
-    ParseElements(inText, fields) {
+    ParseElements(inText) {
         ; quote character for use in regex
         entry := {}
-        for i, item in fields {
+        for i, item in this.fields {
             reg := RegExMatch(inText, "\{" item ":(?P<" item ">.*?[^\\])}", matched)
             entry.%item% := (reg) ? matched[item] : ""
         }
@@ -119,7 +126,7 @@ class HTools {
         entry.text := this.Stringify(entry.text, 0)
         return entry
     }
-
+    
     AddEntry(key, type, name, text) {
         entry := {}
         entry.name := name

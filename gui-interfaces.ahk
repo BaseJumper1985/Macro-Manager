@@ -2,20 +2,25 @@
 
 class GuiBase extends HTools {
     static GuiLists := []
+    Gui := {}
     Guis[] {
         set => %this.__class%.GuiLists.Push(value)
         get => %this.__class%.GuiLists
     }
 
     MakeBaseGui() {
-        leftWidth := 400
+        leftWidth := 300
         preview := []
         g := GuiCreate()
-        g.SetFont("s12")
         g.Title := "Insert Hotstring"
-        gSearch := g.Add("Edit", "vSearch w" leftWidth , "Search")
-        gList := g.Add("ListView", "vList section w" leftWidth " r12", "Trigger|Name")
-        gText := g.Add("Text", "vText r8 w400" , "Hotstring Preview")
+        g.SetFont("s12", "Ms Sans")
+        gSearch := g.Add("Edit", "vSearch section w" leftWidth , "Search")
+        g.SetFont()
+        g.SetFont("s11", "Consolas")
+        gText := g.Add("Text", "vText r4 w" leftWidth , "Hotstring Preview")
+        g.SetFont()
+        g.SetFont("s12", "Ms Sans")
+        gList := g.Add("ListView", "vList w" leftWidth " r20", "Trigger|Name")
 
 
         gSearch.OnEvent("Change", (*) => this.SearchListView())
@@ -53,8 +58,16 @@ class GuiBase extends HTools {
 
     OnFocus() {
         t := this.Gui["Text"]
-        t.Pos.W := 700
-        t.Text := this.Text[this.ListSelection("T")]
+        key := this.ListSelection("T")
+        info := Format("
+        (
+            Trigger: {1}
+               Name: {2}
+               Type: {3}
+               Used: {4}
+        )"
+        , key, this.Name[key], this.Type[key], this.Used[key])
+        t.Text := info
     }
 
     ListSelection(type := "T") {
@@ -69,7 +82,6 @@ class GuiBase extends HTools {
         letters := StrSplit(this.gui["Search"].Text)
         l.Opt("-Redraw")
         l.Delete()
-        rowNum := l.GetNext()
         matchedCount := 0
         for k, v in this.Macros {
             regTerm := "^.*"
@@ -77,7 +89,7 @@ class GuiBase extends HTools {
                 regTerm .= letter ".*"
             }
             regTerm .= "$"
-            haystack := (v.name != "") ? v.name : k
+            haystack := k v.name ; (v.name != "") ? v.name : k
             matched := RegExMatch(haystack, "i)" regTerm)
             if (matched) {
                 l.Add(, k, v.name)
@@ -86,9 +98,9 @@ class GuiBase extends HTools {
 
         }
         if (matchedCount) {
-            l.Modify(rowNum, "+select")
-            firstRow := l.GetText(l.GetNext())
-            this.Gui["Text"].Text := this.Text[firstRow]
+            l.Modify(0, "-select")
+            l.Modify(1, "+select")
+            this.OnFocus()
 
         }
         l.Opt("+Redraw")
@@ -96,8 +108,6 @@ class GuiBase extends HTools {
 }
 
 class GuiUseEntry extends GuiBase {
-    Gui := {}
-    dynamic := {}
     helpText := "
     (
         Use the Search field at the top left to find a hotstring.
@@ -116,17 +126,10 @@ class GuiUseEntry extends GuiBase {
         this.GuiUpdate()
     }
     PlaceText(*) {
+        key := this.ListSelection("T")
         this.Gui.Hide()
-        l := this.Gui["List"]
-        rowNum := (l.GetNext()) ? l.GetNext() : 1
-        key := l.GetText(rowNum)
         WinWaitNotActive("Insert Hotstring")
-        if (this.Macros[key].type = "Dynamic") {
-            this.DynamicOut(key)
-        }
-        else {
-            this.PasteText(key)
-        }
+        this.OutputType(key)
     }
 
     MakeGui() {
@@ -134,9 +137,11 @@ class GuiUseEntry extends GuiBase {
         g := this.Gui
         g.Title := "Insert Hotstring"
         this.Gui.MenuBar := this.GuiHotstringMenuBar(this.helpText)
-        gOkay := g.Add("Button", "default section", "Okay")
+        gOkay := g.Add("Button", "default ys section", "Okay")
         gCancel := g.Add("Button", "ys", "Cancel")
+        gPreview := g.Add("Edit", "r28 w400 xs ReadOnly")
         g["List"].OnEvent("DoubleClick", (*) => this.PlaceText())
+        g["List"].OnEvent("ItemFocus", (*) => gPreview.Text := this.Text[this.ListSelection()])
         gOkay.OnEvent("Click", (*) => this.PlaceText())
         gCancel.OnEvent("Click", (*) => this.Gui.Hide())
         gCancel.OnEvent("Click", (*) => this.GuiUpdate())
