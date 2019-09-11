@@ -127,6 +127,11 @@ class GuiUseEntry extends GuiBase {
     }
     PlaceText(*) {
         key := this.ListSelection("T")
+        if (key = "Trigger")
+        {
+            MsgBox("Nothing selected.`nPlease select an item from the list.")
+            return
+        }
         this.Gui.Hide()
         WinWaitNotActive("Insert Hotstring")
         this.OutputType(key)
@@ -149,7 +154,8 @@ class GuiUseEntry extends GuiBase {
 }
 
 class GuiEditEntries extends GuiBase {
-    Gui := {}
+    ;Gui := {}
+    inputFields := ["Input", "Name", "Type", "Edit"]
     helpText := "
     (
         You can use this window to:
@@ -172,43 +178,71 @@ class GuiEditEntries extends GuiBase {
     Show(opt := "") {
         this.Gui.Show(opt)
         this.GuiUpdate()
+        this.CheckFields()
     }
 
     MakeGui() {
         leftWidth := 400
+/*
         g := GuiCreate()
         g.Title := "Edit Hotstrings"
         g.MenuBar := this.GuiHotstringMenuBar(this.helpText)
         g.SetFont("s11")
         gList := g.Add("ListView", "vList section w" leftWidth " r14", "Trigger|Name")
+*/
+        this.MakeBaseGui()
+        g := this.Gui
         gDelete := g.Add("Button", "", "Delete Hotstring")
         g.Add("Text", "ys section", "New Hotstring")
         g.Add("Edit", "vInput ys r1 w200")
         iPos := g["Input"].Pos.H
-        gClear := g.Add("Button", "ys h" iPos, "Clear")
         g.Add("Text", "section xs", "Hotstring Name")
         g.Add("Edit", "vName r1 ys", "")
-        gAdd := g.Add("Button", "ys h" iPos, "Apply")
-        g.Add("DropDownList", "vType xs r2 Choose1", "Hotstring|Dynamic")
-        g.Add("Edit", "vEdit r12 xs w400 WantTab", "Place hotstring result here") ; hotstring result editor
+        g.Add("Text", "section xs", "Type")
+        g.Add("DropDownList", "vType ys r2", "Standard|Dynamic")
+        gAdd := g.Add("Button", "vApply ys h" iPos, "Apply")
+        gAdd.Enable := false
+        gClear := g.Add("Button", "ys h" iPos, "Clear")
+        g.Add("Edit", "vEdit r25 xs w400 WantTab", "Place hotstring result here") ; hotstring result editor
         
-        
-        gLIst.OnEvent("ItemFocus", (*) => this.SetText()) ; => single line function to assign a value. Java inspired
-        gDelete.OnEvent("Click", (*) => this.GuiRemoveHotstrings(gList.GetText(gList.GetNext())))
+        for x in this.inputFields {
+            g[x].OnEvent("Change", (*) => this.CheckFields())
+        }
+        g["List"].OnEvent("ItemFocus", (*) => this.SetText()) ; => single line function to assign a value. Java inspired
+        gDelete.OnEvent("Click", (*) => this.GuiRemoveHotstrings(this.ListSelection()))
         gAdd.OnEvent("Click", (*) => this.GuiModifyLine(g["Input"].Text, g["Edit"].Text, g["Name"].Text))
-        gClear.OnEvent("Click", (*) => g["Input"].text := g["Edit"].text := g["Name"].text := "")
-        this.Gui := g
-        this.Guis := g
+        gClear.OnEvent("Click", (*) => this.ClearFields())
+        g.OnEvent("Size", (*) => this.CheckFields())
+    }
+
+    ClearFields(*) {
+        g := this.Gui
+        g["Input"].text := g["Edit"].text := g["Name"].text := ""
+        g["Type"].Value := 0
+        this.CheckFields()
+    }
+    
+    CheckFields(*) {
+        g := this.Gui
+        valid := false
+        if (RegexMatch(g["Input"].Text, "^[a-z]{3,}$")
+            and g["Name"].Text
+            and g["Edit"].Text
+            and g["Type"].Text != "") {
+            valid := true
+            ;MsgBox(valid)
+        }
+        else {
+            valid := false
+            ;MsgBox(valid)
+        }
+        g["Apply"].Enabled := valid
     }
 
     GuiModifyLine(key, text, name) {
         g := this.Gui
         canWrite := "Yes"
-        if (key = "") {
-            canWrite := "No"
-            MsgBox("You Cannot leave the [New Hotstring] field blank.")
-        }
-        else if (this.macros.has(key)) { 
+        if (this.macros.has(key)) {
             canWrite := MsgBox("There is already an entry called [" key "]`nWould you like to replace it?", "Overwrite", "YN")
         }
         if (canWrite = "Yes") {
@@ -234,7 +268,9 @@ class GuiEditEntries extends GuiBase {
         key := l.GetText(l.GetNext())
         g["Edit"].Text := this.Text[key]
         g["Name"].Text := this.Name[key]
+        g["Type"].Value := (this.Type[key] = "Standard") ? 1 : 2
         g["Input"].Text := key
+        this.CheckFields()
     }
 
     GuiRemoveHotstrings(deleter) {
@@ -247,7 +283,7 @@ class GuiEditEntries extends GuiBase {
             }
             else {
                 this.macros.Delete(deleter) ; remove key from assosiative array of hotstring objects
-                this.GuiListUpdate() ; destroy and rebuild relavent guis
+                this.GuiUpdate() ; destroy and rebuild relavent guis
                 this.SetHotstring(deleter, 0) ; desable matching hotstring with
             }
         }

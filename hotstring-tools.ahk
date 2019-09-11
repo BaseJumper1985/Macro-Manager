@@ -76,12 +76,11 @@ class HTools {
 
     OutputType(key) {
         key := Trim(RegExReplace(key, "^:.+?:"))
-        ;MsgBox(key)
-        if (this.Macros[key].type = "Dynamic") {
-            this.DynamicOut(key)
-        }
-        else {
+        if (this.Type[key] = "Standard") {
             this.PasteText(key)
+        }
+        else if (this.Type[key] = "Dynamic") {
+            this.DynamicOut(key)
         }
     }
 
