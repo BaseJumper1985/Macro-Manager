@@ -1,5 +1,6 @@
 #Include import-export-gui.ahk
-#include gui-interfaces.ahk
+#include gui-base.ahk
+#include dynamic-hotstring.ahk
 
 class HTools {
     static IniFile := ""
@@ -118,8 +119,11 @@ class HTools {
         ; quote character for use in regex
         entry := {}
         for i, item in this.fields {
-            reg := RegExMatch(inText, "\{" item ":(?P<" item ">.*?[^\\])}", matched)
-            entry.%item% := (reg) ? matched[item] : ""
+            pos := RegExMatch(inText, "(?:(^|\}))\{" item ":(?P<" item ">.*?[^\\])}", matched)
+            if (!pos)
+                break
+            entry.%item% := (pos) ? matched[item] : ""
+            pos := pos + matched.Len(0) - 2
         }
         entry.modified := 0
         entry.text := this.Stringify(entry.text, 0)
