@@ -39,6 +39,7 @@ class GuiUseEntry extends GuiBase {
         gPreview := g.Add("Edit", "r27 w400 xs ReadOnly")
         g["List"].OnEvent("DoubleClick", (*) => this.PlaceText())
         g["List"].OnEvent("ItemFocus", (*) => gPreview.Text := this.Text[this.ListSelection()])
+        g["Search"].OnEvent("Change", (*) => gPreview.Text := this.Text[this.ListSelection()])
         gOkay.OnEvent("Click", (*) => this.PlaceText())
         gCancel.OnEvent("Click", (*) => this.Gui.Hide())
         gCancel.OnEvent("Click", (*) => this.GuiUpdate())

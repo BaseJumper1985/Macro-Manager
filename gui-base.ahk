@@ -68,10 +68,10 @@ class GuiBase extends HTools {
         t.Text := info
     }
 
-    ListSelection(type := "T") {
+    ListSelection(type := "T", col := 1) {
         l := this.Gui["List"]
         if(type = "T") {
-            return l.GetText(l.GetNext())
+            return l.GetText(l.GetNext(), col)
         }
     }
 

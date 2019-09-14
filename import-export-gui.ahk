@@ -6,6 +6,7 @@ class ImportExport extends HTools {
     MakeImExGui() {
         g := GuiCreate()
         g.SetFont("s12")
+        g.Title := "Import\Export"
         lList := g.Add("ListView", "section checked w400 r12", "Trigger|Name")
         lList.Visible := false
         lList.Name := "lList"
