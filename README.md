@@ -105,4 +105,4 @@ The **Import/Export** Window is for the easy transfer of hotstrings between comp
 
 #### Things to Note
 
-- Writes to the config file only happen you are inactive at the computer for about 10 seconds. This is keep that chance errors to a minimum. after the 10 seconds, all changes made are written at once. I will add a manual way to save should be some reason the program needs to closed right a way.
+- Writes to the config file only happen when you are inactive at the computer for about 10 seconds. This is to keep that chance errors to a minimum. after the 10 seconds, all changes made are written at once. I will add a manual way to save should there be some reason the program needs to be closed right a way.
