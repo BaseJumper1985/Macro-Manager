@@ -105,9 +105,10 @@ class HTools {
         sectionArray := StrSplit(section, "`n") ; split each line of section into array
         for k, v in sectionArray {
             if (v != "") {
-                splitKey := StrSplit(v, "=")
-                key := splitkey[1]
-                text := splitkey[2]
+                ;splitKey := StrSplit(v, "=") ; this did not handle `=` inside any other parts of the entry.
+                pos := RegExMatch(v, "^(\w+)=(.+)", matched)
+                key := matched[1]
+                text := matched[2]
                 ; extract the name of the ini listing if present
                 IniArray[key] := this.ParseElements(text)
             }
