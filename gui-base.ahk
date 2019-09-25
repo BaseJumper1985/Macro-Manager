@@ -2,6 +2,7 @@
 class GuiBase extends HTools {
     static GuiLists := []
     inputWidth := 200
+    searchSuccess := false
     Gui := {}
     Guis[] {
         set => %this.__class%.GuiLists.Push(value)
@@ -32,13 +33,17 @@ class GuiBase extends HTools {
 
     ; update the list box contents to reflect the new contents of the hotstrings array
     GuiUpdate() {
-        for i, g in this.Guis {
-            l := g["List"]
+        for i, gui in this.Guis {
+            l := gui["List"]
             l.Opt("-Redraw")
             l.Delete()
-            for k, v in this.Macros {
-                l.Add(, k, v.name)
+            l.InsertCol(3, "0")
+            for key, value in this.Macros {
+                l.Add(, key, value.name, value.used)
             }
+            l.ModifyCol(1, "AutoHdr")
+            l.ModifyCol(2, "AutoHdr")
+            l.DeleteCol(3)
             l.Opt("+Redraw")
         }
     }
@@ -77,30 +82,39 @@ class GuiBase extends HTools {
 
     SearchListView(*) {
         l := this.gui["List"]
-        letters := StrSplit(this.gui["Search"].Text)
+        search := this.gui["Search"].Text
+        if (!search or !RegExMatch(search, "[\w\s]+")) {
+            this.GuiUpdate()
+            return
+        }
+        letters := StrSplit(search)
         l.Opt("-Redraw")
         l.Delete()
+        l.InsertCol(3, "0")
         matchedCount := 0
         for k, v in this.Macros {
-            regTerm := "^.*"
+            regTerm := "^.*" ; beggining of string
             for inl, letter in  letters {
-                regTerm .= letter ".*"
+                regTerm .= letter ".*" ; any letters appearing in the same sequence at location.
             }
-            regTerm .= "$"
-            haystack := k v.name ; (v.name != "") ? v.name : k
+            regTerm .= "$" ; end of string
+            haystack := k v.name
             matched := RegExMatch(haystack, "i)" regTerm)
             if (matched) {
-                l.Add(, k, v.name)
+                l.Add(, k, v.name, v.used)
                 matchedCount += matched
             }
 
         }
         if (matchedCount) {
+            l.ModifyCol(1, "AutoHdr")
+            l.ModifyCol(2, "AutoHdr")
+            l.ModifyCol(3, "0 SortDesc")
             l.Modify(0, "-select")
             l.Modify(1, "+select")
             this.OnFocus()
-
         }
+        l.DeleteCol(3)
         l.Opt("+Redraw")
     }
 }

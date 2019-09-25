@@ -39,7 +39,7 @@ class GuiUseEntry extends GuiBase {
         gPreview := g.Add("Edit", "r27 w400 xs ReadOnly")
         g["List"].OnEvent("DoubleClick", (*) => this.PlaceText())
         g["List"].OnEvent("ItemFocus", (*) => gPreview.Text := this.Text[this.ListSelection()])
-        g["Search"].OnEvent("Change", (*) => gPreview.Text := this.Text[this.ListSelection()])
+        g["Search"].OnEvent("Change", (*) => gPreview.Text := (this.Macros.Has(this.ListSelection())) ? this.Text[this.ListSelection()] : "")
         gOkay.OnEvent("Click", (*) => this.PlaceText())
         gCancel.OnEvent("Click", (*) => this.Gui.Hide())
         gCancel.OnEvent("Click", (*) => this.GuiUpdate())
@@ -95,8 +95,8 @@ class GuiEditEntries extends GuiBase {
         g.Add("Edit", "vName r1 ys " boxPos, "")
         g.Add("Text", "section xs", "Type")
         g.Add("DropDownList", "vType ys r2 " boxPos, "Standard|Dynamic")
-        gAdd := g.Add("Button", "vApply ys h" iPosH, "Apply")
-        gAdd.Enable := false
+        gMod := g.Add("Button", "vApply ys h" iPosH, "Apply")
+        gMod.Enable := false
         gClear := g.Add("Button", "ys h" iPosH, "Clear")
         g.Add("Edit", "vEdit r25 xs w400 WantTab", "Place hotstring result here") ; hotstring result editor
         
@@ -105,7 +105,7 @@ class GuiEditEntries extends GuiBase {
         }
         g["List"].OnEvent("ItemFocus", (*) => this.SetText()) ; => single line function to assign a value. Java inspired
         gDelete.OnEvent("Click", (*) => this.GuiRemoveHotstrings(this.ListSelection()))
-        gAdd.OnEvent("Click", (*) => this.GuiModifyLine(g["Input"].Text, g["Edit"].Text, g["Name"].Text))
+        gMod.OnEvent("Click", (*) => this.GuiModifyLine(g["Input"].Text, g["Edit"].Text, g["Name"].Text))
         gClear.OnEvent("Click", (*) => this.ClearFields())
         g.OnEvent("Size", (*) => this.CheckFields())
     }
