@@ -6,9 +6,8 @@ class GuiUseEntry extends GuiBase {
         Pressing Enter will select the top item from the list and
         paste its result into the last focused window.
 
-        You can also change the formatting of the text by selecting
-        one of the options on the right then Clicking [Okay] or
-        Double Clicking the Hotstring in the List.
+        You can also double click any item from the list to use it
+        or select an item by clicking it once then clicking [Okay]
     )"
     __New() {
         this.MakeGui()

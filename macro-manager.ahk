@@ -52,7 +52,11 @@ PopMenu(ByRef item) {
 
 Hotkey("$#h", (*) => InsertHotstrings.Show())
 
-Hotstring(":*:dt  ", Format("{1}/{2}/{3} {4}:{5}", A_YYYY, A_MM, A_DD, A_Hour, A_Min))
+Hotstring(":*:dt  ", (*) => DateTimeOut())
+DateTimeOut() {
+    out := Format("{1}-{2}-{3} {4}:{5}", A_YYYY, A_MM, A_DD, A_Hour, A_Min)
+    Send(out)
+}
 
 /*
 trayMenu := A_TrayMenu

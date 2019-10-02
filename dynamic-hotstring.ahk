@@ -72,7 +72,6 @@ class DynamicHotstring extends GuiBase {
                 if (!pos)
                     break
                 key := matches[1]
-                MsgBox(key)
                 replace := this.FormatText(key, word)
                 out := RegExReplace(out, "i)\{(" v ")(:.+?)?}", replace, , 1, pos)
                 pos := pos + matches.Len(0) - 2
