@@ -104,14 +104,15 @@ The **Import/Export** Window is for the easy transfer of hotstrings between comp
   1. First hold down the **Windows key &#8862;** and **Right Click** anywhere.
   2. In the **Menu** that appears select **Import/Export**.
 - **How to export hotstrings**
-  1. Click the **Export** button to have your current list of hotstrings appear preformatted and ready for import to another computer.
-  2. After clicking **Export** the button will change to **Copy**. Click this to copy the contents to the clipboard.
+  1. Select the hotstrings you would like to export from the list on the right. You can use the check box next to each entry, or you can use the **Check all** button if you would like to export all of the your hotstrings. In addition, you may use the **Invert** option to easily exclude some hotstrings from export by selecting the ones you don't want included then clicking the **Invert** button. You may also undo any selections by clicking **Check none**.
+  2. Click the **Export** button to have your current selection of hotstrings appear preformatted and ready for import to another computer.
+  3. After clicking **Export** the button will change to **Copy**. Click this to copy the contents to the clipboard.
 - **How to import hotstrings**
   1. To Import, simply paste the exported contents into the box on the left and click **Parse**. The import button will change to **Import**
-  2. Click the **Import** button and the box on the left will turn into a list of hotstrings with check boxes.
+  2. Click the **Parse** button and the box on the left will turn into a list of hotstrings with check boxes.
   3. Any hotstrings that are not already in your current config will have their checkbox activated, while any conflicts will be unchecked.
-  4. Click on any items in the list on the left to see the match that is already in you config. Any items you check will overwrite your current items.
-  5. When you are satisfied with your selections click the **Import** button.
+  4. Click on any items in the list on the left to see the match that is already in you config. Any items you check will overwrite their matching counterpart in the list on the right.
+  5. When you are satisfied with your selections click the **Import** button. Changes will take effect imediately and the `macros.ini` file will be updated the next time your computer is idle for more than **ten seconds**.
 
 #### Things to Note
 
