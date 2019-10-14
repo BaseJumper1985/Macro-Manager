@@ -20,8 +20,8 @@ if (!FileExist(iniFile)) {
 }
 
 
-global hst := new HTools(iniFile)
-global imex := new ImportExport()
+global hst := HTools.new(iniFile)
+global imex := ImportExport.new()
 
 /*
 for tempk, tempv in hst.macros {
@@ -36,8 +36,8 @@ CheckIdle() {
     }
 }
 
-global InsertHotstrings := new GuiUseEntry()
-global EditHotstrings := new GuiEditEntries()
+global InsertHotstrings := GuiUseEntry.new()
+global EditHotstrings := GuiEditEntries.new()
 
 fMenu := MenuCreate() ; create the right click menu for use with the prograMS gui elements
 fMenu.Add("Insert Hotstring Here.", (*) => InsertHotstrings.Show()) ; open insert hotstring dialog
@@ -58,17 +58,16 @@ DateTimeOut() {
     Send(out)
 }
 
-/*
 trayMenu := A_TrayMenu
 trayMenu.Delete()
-trayMenu.Add("Edit Hotstrings", (*) => GhotModify.Show()) ; open modify hotstring dialog
-trayMenu.Add("Take a Break", (*) => TakeBreak(trayMenu))
+trayMenu.Add("Edit Hotstrings", (*) => EditHotstrings.Show()) ; open modify hotstring dialog
+trayMenu.Add("Import/Export", (*) => ImEx.Show()) ; open import/export window
+trayMenu.Add("Pause Program", (*) => TakeBreak(trayMenu))
 trayMenu.Add("Exit", (*) => ExitApp())
-TakeBreak(this) {
+TakeBreak(item) {
     Suspend()
-    this.ToggleCheck("Pause Hotkeys")
+    item.ToggleCheck("Pause Program")
 }
-*/
 
 GetSetting(key) {
     return IniRead(HTools.IniFile, "Settings", key)

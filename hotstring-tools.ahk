@@ -87,7 +87,7 @@ class HTools {
 
     DynamicOut(key) {
         this.dynamic := ""
-        this.dynamic := new DynamicHotstring(key, this.Text[key])
+        this.dynamic := DynamicHotstring.new(key, this.Text[key])
         this.dynamic.show()
     }
 
