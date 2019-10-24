@@ -38,7 +38,7 @@ class ImportExport extends HTools {
         parseIn.OnEvent("Click", (*) => this.ParseLines(lList, rList, input))
         import.OnEvent("Click", (*) => this.ImportChecked(lList))
         lList.OnEvent("ItemFocus", (*) => this.Compare(lList, lText, rList, rText))
-        rList.OnEvent("ItemFocus", (*) => rText.Text := this.Text[rList.GetText(rList.GetNext(1, "F"))])
+        rList.OnEvent("ItemFocus", (*) => rText.Text := this.Text[rList.GetText(rList.GetNext(0, "F"))])
 
         lChall.OnEvent("Click", (*) => lList.Modify(0, "+Check"))
         lChnone.OnEvent("Click", (*) => lList.Modify(0, "-Check"))

@@ -15,7 +15,7 @@ class DynamicHotstring extends GuiBase {
         pos := 1 ;The starting position where RegExMatch will start from allowing traversal of the string.
         hash := map() ;Hash map for use in avoiding duplicates.
         Loop {
-            pos := RegExMatch(this.string, "\{([A-Za-z]+)}", found, pos)
+            pos := RegExMatch(this.string, "\{([A-Za-z\s]+)}", found, pos)
             if (!pos)
                 break ;break if RegExMatch does not find a match in the string.
             word := found[1]
