@@ -1,6 +1,3 @@
-; ========================
-; Auto Execute Section
-; ========================
 
 #Warn ; enable warnings to assist with detecting common errors
 #Persistent ; make sure the program does not shut down on its own
@@ -18,6 +15,16 @@ if (!FileExist(iniFile)) {
     DirCreate(configFolder)
     FileAppend("", iniFile)
 }
+
+; ========================
+;Global Constants
+; ========================
+
+global FONT_SIZE := 10
+
+; ========================
+; Auto Execute Section
+; ========================
 
 
 global hst := HTools.new(iniFile)

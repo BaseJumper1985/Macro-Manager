@@ -14,10 +14,10 @@ class GuiBase extends HTools {
         preview := []
         g := GuiCreate()
         g.Title := "Insert Hotstring"
-        g.SetFont("s11", "Consolas")
+        g.SetFont("s" FONT_SIZE, "Consolas")
         gText := g.Add("Text", "section vText r4 w" leftWidth , "Hotstring Preview")
         g.SetFont()
-        g.SetFont("s12", "Ms Sans")
+        g.SetFont("s" FONT_SIZE, "Ms Sans")
         gSearch := g.Add("Edit", "vSearch w" leftWidth , "Search")
         gList := g.Add("ListView", "vList w" leftWidth " r20", "Trigger|Name")
 
