@@ -1,4 +1,4 @@
-#include gui-edit-use.ahk
+#include build-gui.ahk
 class GuiBase extends HTools {
     static GuiLists := []
     inputWidth := 200
